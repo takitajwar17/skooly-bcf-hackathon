@@ -11,7 +11,7 @@ import {
   IconFileWord,
   IconFolder,
   IconHelp,
-  IconInnerShadowTop,
+  IconSchool,
   IconListDetails,
   IconReport,
   IconSearch,
@@ -160,8 +160,8 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <a href="/">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                <IconSchool className="!size-5 text-primary" />
+                <span className="text-base font-bold tracking-tight">Skooly</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
