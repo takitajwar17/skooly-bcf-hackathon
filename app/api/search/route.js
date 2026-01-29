@@ -33,6 +33,13 @@ export async function POST(request) {
     console.log("\n=== Search API Result ===");
     console.log("Result Text Length:", result.text?.length || 0);
     console.log("Result Citations Count:", result.citations?.length || 0);
+    if (result.stats) {
+      console.log("Filtering Stats:", result.stats);
+      console.log(`  - Retrieved: ${result.stats.totalRetrieved} documents`);
+      console.log(
+        `  - Showing: ${result.stats.relevantShown} relevant (${result.stats.filterRate})`,
+      );
+    }
 
     if (mode === "search") {
       console.log("Mode: SEARCH - Returning structured results");

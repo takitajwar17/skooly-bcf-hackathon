@@ -105,8 +105,12 @@ export default function AiMaterialsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {materials.map((material) => (
-                <Link key={material._id} href={`/ai-materials/${material._id}`}>
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                <Link
+                  key={material._id}
+                  href={`/ai-materials/${material._id}`}
+                  className="block"
+                >
+                  <Card className="hover:shadow-lg transition-all cursor-pointer h-full hover:border-primary/50">
                     <CardHeader className="flex flex-row items-center gap-4 pb-2">
                       <div className="p-2 bg-muted rounded-lg">
                         {getIcon(material.type)}
