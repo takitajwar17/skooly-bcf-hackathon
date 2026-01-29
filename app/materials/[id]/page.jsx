@@ -88,7 +88,7 @@ export default function MaterialPreviewPage() {
 
     if (type === "pdf") {
       return (
-        <div className="w-full">
+        <div className="w-full flex flex-col gap-2"> 
           <iframe
             src={`${fileUrl}#toolbar=0`}
             className="w-full h-[75vh] rounded-lg border shadow-lg bg-white"
