@@ -10,7 +10,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-1 lg:gap-2">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-          <h1 className="text-base font-medium">Documents</h1>
+          <h1 className="text-sm font-semibold tracking-tight">Skooly Space</h1>
         </div>
         <ThemeToggle className="border-none shadow-none" />
       </div>
