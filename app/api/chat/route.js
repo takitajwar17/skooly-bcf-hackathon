@@ -156,23 +156,40 @@ async function findMaterials(query, limit = 5) {
       })),
     })
       .select("title course category topic week fileUrl type")
-      .limit(limit * 2); // Get more to filter
+      .limit(limit * 2);
 
-    // Filter by relevance - check if query keywords appear in title/topic/category
+    // Extract important keywords from query (ignore common words)
+    const stopWords = [
+      "find",
+      "search",
+      "show",
+      "give",
+      "get",
+      "list",
+      "any",
+      "files",
+      "materials",
+      "the",
+      "for",
+      "about",
+      "on",
+      "me",
+      "please",
+    ];
     const queryWords = query
       .toLowerCase()
       .split(/\s+/)
-      .filter((w) => w.length > 2);
+      .filter((w) => w.length > 2 && !stopWords.includes(w));
+
+    // STRICT filter - only return files that match at least one keyword
     const filtered = materials.filter((m) => {
       const searchText =
         `${m.title} ${m.topic || ""} ${m.category || ""}`.toLowerCase();
       return queryWords.some((word) => searchText.includes(word));
     });
 
-    // If no filtered results, return original (might be a follow-up query)
-    return filtered.length > 0
-      ? filtered.slice(0, limit)
-      : materials.slice(0, limit);
+    // Return only filtered results - if nothing matches, return empty
+    return filtered.slice(0, limit);
   } catch (error) {
     console.error("Error finding materials:", error);
     return [];
