@@ -25,7 +25,7 @@
 ### 1.1 Install Dependencies
 
 ```bash
-npm install @google/generative-ai pdf-parse mammoth uuid formidable
+npm install @google/generative-ai pdf-parse mammoth uuid cloudinary
 ```
 
 ### 1.2 Create Database Models
@@ -62,6 +62,11 @@ npm install @google/generative-ai pdf-parse mammoth uuid formidable
 ```env
 GOOGLE_API_KEY=AIza...
 MONGODB_URI=mongodb+srv://...
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
 ---
@@ -77,17 +82,38 @@ MONGODB_URI=mongodb+srv://...
 - Parse code files (raw text)
 - Extract structured content
 
-### 2.2 Upload API
+### 2.2 Cloudinary Integration
+
+#### [NEW] `lib/cloudinary/config.js`
+
+```javascript
+// Initialize Cloudinary SDK
+// Configure with environment variables
+// Export cloudinary instance and upload helpers
+```
+
+#### [NEW] `lib/cloudinary/upload.js`
+
+```javascript
+// Functions:
+// - uploadFile(file, options) → { publicId, secureUrl, resourceType }
+// - uploadImage(file) → optimized image URL
+// - uploadVideo(file) → video URL with transformations
+// - uploadDocument(file) → raw file URL (PDF, DOCX, etc.)
+// - deleteFile(publicId) → remove from Cloudinary
+```
+
+### 2.3 Upload API
 
 #### [NEW] `app/api/upload/route.js`
 
 - Handle multipart file upload
-- Save file to `/public/uploads`
-- Parse file content
-- Create Material document
+- Upload to Cloudinary (auto-detect resource type)
+- Store Cloudinary URL + publicId in Material document
+- Parse file content for embeddings
 - Trigger embedding generation
 
-### 2.3 Materials CRUD API
+### 2.4 Materials CRUD API
 
 #### [NEW] `app/api/materials/route.js`
 
@@ -98,28 +124,31 @@ MONGODB_URI=mongodb+srv://...
 
 - GET: Get single material
 - PUT: Update material
-- DELETE: Delete material + embeddings
+- DELETE: Delete material + embeddings + Cloudinary file
 
-### 2.4 Admin Upload UI
+### 2.5 Admin Upload UI
 
 #### [NEW] `app/admin/upload/page.jsx`
 
-- Drag & drop file upload
+- Drag & drop file upload (images, videos, documents)
 - Metadata form (title, category, topic, week, tags)
-- Upload progress indicator
+- Upload progress indicator (Cloudinary upload progress)
+- Preview uploaded media (image/video thumbnails via Cloudinary transformations)
 
-### 2.5 Materials Browser UI
+### 2.6 Materials Browser UI
 
 #### [NEW] `app/materials/page.jsx`
 
-- Grid view of materials
+- Grid view of materials with Cloudinary thumbnails
 - Filter by category (Theory/Lab), type, week
 - Search by tags
+- Video previews using Cloudinary video player
 
 #### [NEW] `app/materials/[id]/page.jsx`
 
 - View material details
-- Download original file
+- Download original file (Cloudinary URL)
+- Stream video/audio content
 - View extracted content
 
 ---
@@ -328,11 +357,12 @@ MONGODB_URI=mongodb+srv://...
 
 ```bash
 # 1. Install new dependencies
-npm install @google/generative-ai pdf-parse mammoth uuid formidable
+npm install @google/generative-ai pdf-parse mammoth uuid cloudinary
 
 # 2. Setup .env.local
 cp .env.example .env.local
 # Add GOOGLE_API_KEY
+# Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
 
 # 3. Create MongoDB Atlas vector search index
 # Collection: embeddings
