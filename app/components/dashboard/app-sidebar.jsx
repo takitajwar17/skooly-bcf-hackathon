@@ -9,6 +9,7 @@ import {
   IconSchool,
   IconSearch,
   IconSettings,
+  IconSparkles,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/app/components/dashboard/nav-main"
@@ -27,14 +28,19 @@ import {
 const data = {
   navMain: [
     {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: IconDashboard,
+    },
+    {
       title: "Course Materials",
       url: "/materials",
       icon: IconFileDescription,
     },
     {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: IconDashboard,
+      title: "Skooly AI",
+      url: "/companion",
+      icon: IconSparkles,
     },
     {
       title: "Projects",

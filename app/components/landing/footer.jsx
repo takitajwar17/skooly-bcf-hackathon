@@ -13,7 +13,6 @@ const footerSections = [
     links: [
       { title: "Course Materials", href: "/materials" },
       { title: "AI Tutor", href: "#" },
-      { title: "Projects", href: "/projects" },
       { title: "Dashboard", href: "/dashboard" },
     ],
   },

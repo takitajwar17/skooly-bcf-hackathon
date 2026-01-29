@@ -22,6 +22,7 @@ import {
 } from "@/app/components/ui/tabs";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
+import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { Input } from "@/app/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import {
@@ -156,12 +157,17 @@ export default function MaterialsPage() {
         "--header-height": "calc(var(--spacing) * 12)"
       }}
     >
+      <style dangerouslySetInnerHTML={{ __html: `
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}} />
       <AppSidebar variant="inset" />
-      <SidebarInset>
+      <SidebarInset className="overflow-hidden flex flex-col h-screen">
         <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="@container/main flex flex-1 flex-col gap-2 overflow-hidden">
+            <ScrollArea className="flex-1 no-scrollbar">
+              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               
               <div className="flex items-center justify-between px-4 lg:px-6">
                 <div>
@@ -339,7 +345,8 @@ export default function MaterialsPage() {
                   </Tabs>
                 </div>
               )}
-            </div>
+              </div>
+            </ScrollArea>
           </div>
         </div>
       </SidebarInset>
