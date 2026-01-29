@@ -3,6 +3,17 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { Spinner } from "@/app/components/ui/spinner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import {
   IconPlus,
   IconMessage,
@@ -22,7 +33,24 @@ export function ChatHistorySidebar({
 }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingChatId, setDeletingChatId] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState(null);
 
+  /**
+   * Closes delete dialog and resets state
+   */
+  const handleDialogClose = (open) => {
+    if (!open) {
+      setDeleteDialogOpen(false);
+      setChatToDelete(null);
+    }
+  };
+
+  /**
+   * Fetches chat history from the API
+   * Updates local state with fetched chats
+   */
   const fetchChats = async () => {
     try {
       const response = await fetch("/api/chat");
@@ -32,29 +60,76 @@ export function ChatHistorySidebar({
       }
     } catch (error) {
       console.error("Failed to fetch chats:", error);
+      toast.error("Failed to load chat history");
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * Effect hook to fetch chats when currentChatId changes
+   * Ensures chat list stays in sync with active chat
+   */
   useEffect(() => {
     fetchChats();
   }, [currentChatId]);
 
-  const deleteChat = async (chatId, e) => {
+  /**
+   * Opens delete confirmation dialog
+   * Prevents event propagation to avoid triggering chat selection
+   */
+  const handleDeleteClick = (chatId, e) => {
     e.stopPropagation();
+    setChatToDelete(chatId);
+    setDeleteDialogOpen(true);
+  };
+
+  /**
+   * Deletes a chat after confirmation
+   * Shows loading state during deletion
+   * Updates local state optimistically
+   * Handles cleanup if deleted chat was active
+   */
+  const deleteChat = async () => {
+    if (!chatToDelete) return;
+
+    setDeletingChatId(chatToDelete);
+    setDeleteDialogOpen(false);
+
     try {
-      await fetch(`/api/chat?chatId=${chatId}`, { method: "DELETE" });
-      setChats(chats.filter((c) => c._id !== chatId));
-      if (currentChatId === chatId) {
+      const response = await fetch(`/api/chat?chatId=${chatToDelete}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data?.error || "Failed to delete chat");
+      }
+
+      // Optimistically update UI with smooth transition
+      setChats((prevChats) => prevChats.filter((c) => c._id !== chatToDelete));
+
+      // If deleted chat was active, start new chat
+      if (currentChatId === chatToDelete) {
         onNewChat();
       }
-      toast.success("Chat deleted");
+
+      toast.success("Chat deleted successfully");
     } catch (error) {
-      toast.error("Failed to delete chat");
+      console.error("Failed to delete chat:", error);
+      toast.error(error.message || "Failed to delete chat");
+      // Refresh chat list on error to ensure consistency
+      fetchChats();
+    } finally {
+      setDeletingChatId(null);
+      setChatToDelete(null);
     }
   };
 
+  /**
+   * Formats date relative to current time
+   * Returns human-readable relative time strings
+   */
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -119,51 +194,108 @@ export function ChatHistorySidebar({
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
           {loading ? (
-            <div className="text-xs text-muted-foreground text-center py-4">
-              Loading...
-            </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center justify-center py-8"
+            >
+              <Spinner className="size-5 text-muted-foreground" />
+            </motion.div>
           ) : chats.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-4">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-xs text-muted-foreground text-center py-8"
+            >
               No chat history yet
-            </div>
+            </motion.div>
           ) : (
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
               {chats.map((chat) => (
                 <motion.div
                   key={chat._id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  onClick={() => onSelectChat(chat._id)}
-                  className={`group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                  initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                  animate={{ 
+                    opacity: 1, 
+                    x: 0, 
+                    scale: 1,
+                    transition: {
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 25,
+                    }
+                  }}
+                  exit={{ 
+                    opacity: 0, 
+                    x: -20, 
+                    scale: 0.95,
+                    transition: {
+                      duration: 0.2,
+                    }
+                  }}
+                  layout
+                  onClick={() => {
+                    if (deletingChatId !== chat._id) {
+                      onSelectChat(chat._id);
+                    }
+                  }}
+                  className={`group flex items-center gap-2 p-2.5 rounded-lg cursor-pointer transition-all duration-200 relative ${
                     currentChatId === chat._id
-                      ? "bg-primary/10 border border-primary/20"
-                      : "hover:bg-muted/50"
-                  }`}
+                      ? "bg-primary/10 border border-primary/20 shadow-sm"
+                      : "hover:bg-muted/50 border border-transparent"
+                  } ${deletingChatId === chat._id ? "opacity-50 pointer-events-none" : ""}`}
                 >
                   <IconMessage className="size-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <p className="text-xs font-medium truncate max-w-[140px]" title={chat.title || "New Chat"}>
                       {chat.title || "New Chat"}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[10px] text-muted-foreground truncate max-w-[140px]">
                       {formatDate(chat.updatedAt || chat.createdAt)}
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => deleteChat(chat._id, e)}
-                    className="size-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <IconTrash className="size-3 text-muted-foreground hover:text-destructive" />
-                  </Button>
+                  {deletingChatId === chat._id ? (
+                    <Spinner className="size-4 text-muted-foreground shrink-0" />
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDeleteClick(chat._id, e)}
+                      className="size-7 shrink-0 transition-all duration-200 hover:bg-destructive/10 active:scale-95"
+                      title="Delete chat"
+                    >
+                      <IconTrash className="size-3.5 text-muted-foreground hover:text-destructive transition-colors" />
+                    </Button>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
           )}
         </div>
       </ScrollArea>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={handleDialogClose}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this chat? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => handleDialogClose(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteChat}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -4,8 +4,8 @@ import connectDB from "@/lib/mongodb/mongoose";
 import ChatHistory from "@/lib/models/ChatHistory";
 import Material from "@/lib/models/Material";
 import { searchWithFileSearch } from "@/lib/ai/fileSearchStore";
-import { validateResponse, quickValidate } from "@/lib/ai/contentValidator";
 import { GoogleGenAI } from "@google/genai";
+import logger from "@/lib/logger";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
@@ -195,7 +195,10 @@ async function findMaterials(query, limit = 5) {
     // Return only filtered results - if nothing matches, return empty
     return filtered.slice(0, limit);
   } catch (error) {
-    console.error("Error finding materials:", error);
+    logger.error("Error finding materials", {
+      error: error.message,
+      query,
+    });
     return [];
   }
 }
@@ -256,18 +259,29 @@ async function generateRAGResponse(
   };
 }
 
+/**
+ * POST - Process chat message and generate AI response
+ * Handles intent detection, RAG retrieval, and response generation
+ * Logs workflow for debugging and monitoring
+ */
 export async function POST(request) {
   try {
+    // Authenticate user
     const { userId } = await auth();
     if (!userId) {
+      logger.warn("Chat message attempted without authentication");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Connect to database
     await connectDB();
+    logger.debug("Database connection established for chat message", { userId });
 
+    // Parse request body
     const { message, chatId } = await request.json();
 
     if (!message) {
+      logger.warn("Chat message attempted without message content", { userId });
       return NextResponse.json(
         { error: "Message is required" },
         { status: 400 },
@@ -277,14 +291,22 @@ export async function POST(request) {
     // Get or create chat session
     let chat;
     if (chatId) {
+      logger.debug("Fetching existing chat", { userId, chatId });
       chat = await ChatHistory.findOne({ _id: chatId, userId });
     }
 
     if (!chat) {
+      logger.info("Creating new chat session", { userId });
       chat = new ChatHistory({
         userId,
         title: message.slice(0, 50) + (message.length > 50 ? "..." : ""),
         messages: [],
+      });
+    } else {
+      logger.debug("Using existing chat session", {
+        userId,
+        chatId: chat._id,
+        messageCount: chat.messages?.length || 0,
       });
     }
 
@@ -297,7 +319,12 @@ export async function POST(request) {
 
     // Detect intent
     const intent = detectIntent(message);
-    console.log("Chat: Intent detected:", intent);
+    logger.debug("Chat intent detected", {
+      userId,
+      chatId: chat._id,
+      intent,
+      messagePreview: message.substring(0, 50),
+    });
 
     let aiResponse = "";
     let relevantFiles = [];
@@ -306,7 +333,7 @@ export async function POST(request) {
 
     if (intent === "search") {
       // MATERIAL SEARCH: Just return files, no explanation
-      console.log("Chat: Material search mode");
+      logger.debug("Processing material search request", { userId, chatId: chat._id });
       relevantFiles = await findMaterials(message, 5);
 
       if (relevantFiles.length > 0) {
@@ -319,7 +346,7 @@ export async function POST(request) {
       }
     } else if (intent === "chitchat") {
       // CHITCHAT: Simple response
-      console.log("Chat: Chitchat mode");
+      logger.debug("Processing chitchat request", { userId, chatId: chat._id });
       aiResponse = await generateChitchatResponse(message);
     } else if (
       intent === "summarize" ||
@@ -328,7 +355,7 @@ export async function POST(request) {
       intent === "generate-lab"
     ) {
       // SUMMARIZE, EXPLAIN, or GENERATE: RAG response with specialized prompt
-      console.log("Chat:", intent, "mode");
+      logger.debug("Processing RAG request", { userId, chatId: chat._id, intent });
 
       if (!fileSearchStoreName) {
         return NextResponse.json(
@@ -363,7 +390,7 @@ export async function POST(request) {
       }
     } else {
       // Default Q&A with RAG
-      console.log("Chat: General Q&A mode");
+      logger.debug("Processing general Q&A request", { userId, chatId: chat._id });
 
       if (!fileSearchStoreName) {
         return NextResponse.json(
@@ -397,23 +424,7 @@ export async function POST(request) {
       }
     }
 
-    // Validate AI-generated content (skip for chitchat and search)
-    let validation = null;
-    if (intent !== "chitchat" && intent !== "search") {
-      try {
-        // Use full validation for all generated content (notes, code, explanations)
-        // This ensures Grounding and Self-Eval are always run
-        validation = await validateResponse(aiResponse, message);
-
-        console.log(
-          "Chat: Validation score:",
-          validation.overallScore,
-          validation.status,
-        );
-      } catch (validationError) {
-        console.error("Validation error:", validationError);
-      }
-    }
+    // Validation is done on demand via Evaluate button; see POST /api/chat/evaluate
 
     // Save assistant message
     const assistantMessage = {
@@ -422,10 +433,6 @@ export async function POST(request) {
       intent,
       timestamp: new Date(),
     };
-
-    if (validation) {
-      assistantMessage.validation = validation;
-    }
 
     if (relevantFiles.length > 0) {
       assistantMessage.sources = relevantFiles.map((f) => f._id);
@@ -456,13 +463,19 @@ export async function POST(request) {
       }));
     }
 
-    if (validation) {
-      responseData.validation = validation;
-    }
+    logger.info("Chat message processed successfully", {
+      userId,
+      chatId: chat._id,
+      intent,
+      hasSources: relevantFiles.length > 0,
+    });
 
     return NextResponse.json(responseData);
   } catch (error) {
-    console.error("Chat error:", error);
+    logger.error("Chat error", {
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: error.message || "Chat failed" },
       { status: 500 },
@@ -470,37 +483,66 @@ export async function POST(request) {
   }
 }
 
-// GET - Get chat history
+/**
+ * GET - Retrieve chat history
+ * Returns either a single chat (if chatId provided) or list of all user's chats
+ * Logs retrieval workflow for debugging and monitoring
+ */
 export async function GET(request) {
   try {
+    // Authenticate user
     const { userId } = await auth();
     if (!userId) {
+      logger.warn("Chat history fetch attempted without authentication");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Connect to database
     await connectDB();
+    logger.debug("Database connection established for chat retrieval", { userId });
 
+    // Extract chat ID from query parameters
     const { searchParams } = new URL(request.url);
     const chatId = searchParams.get("chatId");
 
     if (chatId) {
+      // Fetch single chat with populated sources
+      logger.debug("Fetching single chat", { userId, chatId });
       const chat = await ChatHistory.findOne({ _id: chatId, userId }).populate({
         path: "messages.sources",
         select: "title course category topic week fileUrl type",
       });
+      
       if (!chat) {
+        logger.warn("Chat not found", { userId, chatId });
         return NextResponse.json({ error: "Chat not found" }, { status: 404 });
       }
+      
+      logger.info("Chat retrieved successfully", {
+        userId,
+        chatId,
+        messageCount: chat.messages?.length || 0,
+      });
       return NextResponse.json({ chat });
     } else {
+      // Fetch list of all user's chats
+      logger.debug("Fetching chat list", { userId });
       const chats = await ChatHistory.find({ userId })
         .select("title createdAt updatedAt")
         .sort({ updatedAt: -1 })
         .limit(50);
+      
+      logger.info("Chat list retrieved successfully", {
+        userId,
+        chatCount: chats.length,
+      });
       return NextResponse.json({ chats });
     }
   } catch (error) {
-    console.error("Error fetching chats:", error);
+    logger.error("Error fetching chats", {
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: "Failed to fetch chats" },
       { status: 500 },
@@ -508,27 +550,57 @@ export async function GET(request) {
   }
 }
 
-// DELETE - Delete a chat
+/**
+ * DELETE - Delete a chat history entry
+ * Validates user authentication and chat ownership before deletion
+ * Logs deletion workflow for debugging and audit purposes
+ */
 export async function DELETE(request) {
   try {
+    // Authenticate user
     const { userId } = await auth();
     if (!userId) {
+      logger.warn("Chat deletion attempted without authentication");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Connect to database
     await connectDB();
+    logger.debug("Database connection established for chat deletion", { userId });
 
+    // Extract chat ID from query parameters
     const { searchParams } = new URL(request.url);
     const chatId = searchParams.get("chatId");
 
     if (!chatId) {
+      logger.warn("Chat deletion attempted without chat ID", { userId });
       return NextResponse.json({ error: "Chat ID required" }, { status: 400 });
     }
 
+    // Verify chat exists and belongs to user before deletion
+    const chat = await ChatHistory.findOne({ _id: chatId, userId });
+    if (!chat) {
+      logger.warn("Chat deletion attempted for non-existent or unauthorized chat", {
+        userId,
+        chatId,
+      });
+      return NextResponse.json({ error: "Chat not found" }, { status: 404 });
+    }
+
+    // Delete the chat
     await ChatHistory.deleteOne({ _id: chatId, userId });
+    logger.info("Chat deleted successfully", {
+      userId,
+      chatId,
+      title: chat.title,
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting chat:", error);
+    logger.error("Error deleting chat", {
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: "Failed to delete chat" },
       { status: 500 },
