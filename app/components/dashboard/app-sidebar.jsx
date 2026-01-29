@@ -10,7 +10,6 @@ import {
   IconSettings,
   IconSparkles,
   IconUsersGroup,
-  IconPencil,
   IconNotebook,
 } from "@tabler/icons-react";
 
@@ -56,11 +55,6 @@ const data = {
       title: "Community",
       url: "/community",
       icon: IconUsersGroup,
-    },
-    {
-      title: "Handwritten Notes",
-      url: "/handwritten-notes",
-      icon: IconPencil,
     },
   ],
   navSecondary: [
