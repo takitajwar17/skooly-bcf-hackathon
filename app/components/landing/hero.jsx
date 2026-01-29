@@ -20,7 +20,9 @@ const Hero = () => {
             Stop juggling slides, PDFs, and lab code. Learn smarter.
           </h1>
           <p className="mt-6 max-w-[60ch] xs:text-lg text-muted-foreground">
-            Skooly organizes your course content, powers semantic search and RAG, generates theory notes and lab materials, and gives you a conversational AI tutor—all grounded in your actual curriculum.
+            Skooly organizes your course content, powers semantic search and
+            RAG, generates theory notes and lab materials, and gives you a
+            conversational AI tutor—all grounded in your actual curriculum.
           </p>
           <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
             <Button
@@ -47,7 +49,7 @@ const Hero = () => {
         <div className="relative lg:max-w-lg xl:max-w-xl w-full bg-accent rounded-3xl aspect-square overflow-hidden border">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent z-10" />
           <Image
-            src="/placeholder.svg"
+            src="/hero-bg.png"
             fill
             alt="Skooly Interface"
             className="object-cover rounded-xl p-4"
