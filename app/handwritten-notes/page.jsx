@@ -35,6 +35,8 @@ export default function HandwrittenNotesPage() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [result, setResult] = useState("");
+  const [course, setCourse] = useState("");
+  const [topic, setTopic] = useState("");
 
   useEffect(() => {
     return () => {
@@ -97,6 +99,8 @@ export default function HandwrittenNotesPage() {
     setIsProcessing(true);
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("course", course);
+    formData.append("topic", topic);
 
     try {
       const res = await fetch("/api/handwritten-notes", {
@@ -224,6 +228,34 @@ export default function HandwrittenNotesPage() {
                         <div className="flex items-center justify-between">
                           <div className="text-sm font-medium truncate max-w-[200px]">
                             {file.name}
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="course">Course Name</Label>
+                              <div className="relative">
+                                <FileText className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <input
+                                  id="course"
+                                  placeholder="e.g. Physics 101"
+                                  value={course}
+                                  onChange={(e) => setCourse(e.target.value)}
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-9 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="topic">Topic</Label>
+                              <div className="relative">
+                                <CheckCircle2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <input
+                                  id="topic"
+                                  placeholder="e.g. Thermodynamics"
+                                  value={topic}
+                                  onChange={(e) => setTopic(e.target.value)}
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-9 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                />
+                              </div>
+                            </div>
                           </div>
                           <Button
                             onClick={handleDigitize}

@@ -350,7 +350,7 @@ export default function NewMaterialPage() {
                         Notes
                       </Label>
                     </div>
-                    <div>
+                    <div className="hidden">
                       <RadioGroupItem
                         value="slides"
                         id="slides"
@@ -364,7 +364,7 @@ export default function NewMaterialPage() {
                         Slides
                       </Label>
                     </div>
-                    <div>
+                    <div className="hidden">
                       <RadioGroupItem
                         value="pdf"
                         id="pdf"

@@ -81,12 +81,7 @@ export default function MyMaterialsPage() {
 
   const getLink = (item) => {
     if (item.type === "handwritten") {
-        // Assuming we will have a viewer for handwritten notes later, 
-        // for now maybe just re-open the digitization page or a specific viewer?
-        // Since we didn't implement a specific viewer for handwritten notes yet, 
-        // let's assume /handwritten-notes for now or a placeholder.
-        // Actually, let's route to a viewer if we can, or just alert.
-        return `/handwritten-notes`; // Fallback for now
+        return `/handwritten-notes/${item._id}`;
     }
     return `/ai-materials/${item._id}`;
   };

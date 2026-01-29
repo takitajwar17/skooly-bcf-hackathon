@@ -20,7 +20,7 @@ export async function GET(req) {
 
     // Fetch Handwritten Notes
     const handwrittenNotes = await HandwrittenNote.find({ uploadedBy: user.id })
-      .select("title createdAt")
+      .select("title createdAt course topic")
       .lean();
 
     // Normalize and Merge
@@ -43,7 +43,10 @@ export async function GET(req) {
       type: "handwritten",
       subType: "handwritten",
       createdAt: item.createdAt,
-      metadata: {},
+      metadata: {
+        course: item.course,
+        topic: item.topic,
+      },
     }));
 
     const unifiedList = [...normalizedAi, ...normalizedHandwritten].sort(
