@@ -4,7 +4,6 @@ import * as React from "react"
 import {
   IconDashboard,
   IconFileDescription,
-  IconFolder,
   IconHelp,
   IconSchool,
   IconSearch,
@@ -41,11 +40,6 @@ const data = {
       title: "Skooly AI",
       url: "/companion",
       icon: IconSparkles,
-    },
-    {
-      title: "Projects",
-      url: "/projects",
-      icon: IconFolder,
     },
   ],
   navSecondary: [
