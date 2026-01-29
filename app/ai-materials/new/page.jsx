@@ -97,27 +97,36 @@ export default function NewMaterialPage() {
   };
 
   const handleSourceSelect = async (materialSummary) => {
+    // Optimistic update: Select immediately
+    setSelectedSourceId(materialSummary.id);
+
     try {
       const res = await fetch(`/api/materials/${materialSummary.id}`);
       if (!res.ok) throw new Error("Failed to fetch material details");
 
       const material = await res.json();
 
-      setSelectedSourceId(material._id);
       setSelectedSourceTitle(material.title);
       // Ensure content is set even if empty, but fileUrl might be present
-      setSelectedSourceContent(material.content || "");
+      const content = material.content || "";
+      const fileUrl = material.fileUrl || "";
+
+      setSelectedSourceContent(content);
       setSelectedSourceMetadata({
         course: material.course,
         week: material.week,
         topic: material.topic,
-        fileUrl: material.fileUrl, // Capture fileUrl
+        fileUrl: fileUrl, // Capture fileUrl
         sourceMaterialId: material._id, // Capture source ID
       });
       setCustomTitle(`Generated ${materialType} for ${material.title}`);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load source content");
+      // Revert selection on error
+      setSelectedSourceId("");
+      setSelectedSourceContent("");
+      setSelectedSourceMetadata({});
     }
   };
 

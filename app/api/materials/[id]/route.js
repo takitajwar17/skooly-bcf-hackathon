@@ -28,7 +28,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    return NextResponse.json({ data: material });
+    return NextResponse.json(material);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
