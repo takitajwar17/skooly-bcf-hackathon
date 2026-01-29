@@ -4,6 +4,7 @@ import connectDB from "@/lib/mongodb/mongoose";
 import ChatHistory from "@/lib/models/ChatHistory";
 import Material from "@/lib/models/Material";
 import { searchWithFileSearch } from "@/lib/ai/fileSearchStore";
+import { validateResponse, quickValidate } from "@/lib/ai/contentValidator";
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
@@ -26,12 +27,15 @@ function detectIntent(message) {
 
   // Generate lab/code request
   if (
-    /\b(generate|create|make|write).*(lab|code|program|example|practice|implementation)\b/i.test(
+    /\b(generate|create|make|write|give|show).*(lab|code|program|example|practice|implementation|snippet)\b/i.test(
       lowerMsg,
     ) ||
-    /\b(lab|code|program|example|practice).*(generate|create|make|write)\b/i.test(
+    /\b(lab|code|program|example|practice|snippet).*(generate|create|make|write|give|show)\b/i.test(
       lowerMsg,
-    )
+    ) ||
+    // Catch implicit requests: "javascript code", "python practice", "code snippet"
+    (/\b(code|snippet|implementation)\b/i.test(lowerMsg) &&
+      /\b(practice|example|exercise)\b/i.test(lowerMsg))
   ) {
     return "generate-lab";
   }
@@ -393,12 +397,41 @@ export async function POST(request) {
       }
     }
 
+    // Validate AI-generated content (skip for chitchat and search)
+    let validation = null;
+    if (intent !== "chitchat" && intent !== "search") {
+      try {
+        // Use full validation for all generated content (notes, code, explanations)
+        // This ensures Grounding and Self-Eval are always run
+        validation = await validateResponse(aiResponse, message);
+
+        console.log(
+          "Chat: Validation score:",
+          validation.overallScore,
+          validation.status,
+        );
+      } catch (validationError) {
+        console.error("Validation error:", validationError);
+      }
+    }
+
     // Save assistant message
-    chat.messages.push({
+    const assistantMessage = {
       role: "assistant",
       content: aiResponse,
+      intent,
       timestamp: new Date(),
-    });
+    };
+
+    if (validation) {
+      assistantMessage.validation = validation;
+    }
+
+    if (relevantFiles.length > 0) {
+      assistantMessage.sources = relevantFiles.map((f) => f._id);
+    }
+
+    chat.messages.push(assistantMessage);
 
     await chat.save();
 
@@ -421,6 +454,10 @@ export async function POST(request) {
         type: file.type,
         fileUrl: file.fileUrl,
       }));
+    }
+
+    if (validation) {
+      responseData.validation = validation;
     }
 
     return NextResponse.json(responseData);
@@ -447,7 +484,10 @@ export async function GET(request) {
     const chatId = searchParams.get("chatId");
 
     if (chatId) {
-      const chat = await ChatHistory.findOne({ _id: chatId, userId });
+      const chat = await ChatHistory.findOne({ _id: chatId, userId }).populate({
+        path: "messages.sources",
+        select: "title course category topic week fileUrl type",
+      });
       if (!chat) {
         return NextResponse.json({ error: "Chat not found" }, { status: 404 });
       }

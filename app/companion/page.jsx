@@ -8,6 +8,7 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { ChatHistorySidebar } from "@/app/components/chat/ChatHistorySidebar";
+import { ValidationBadge } from "@/app/components/chat/ValidationBadge";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -101,8 +102,9 @@ export default function CompanionPage() {
             id: nanoid(),
             role: m.role,
             content: m.content,
-            relevantFiles: [],
-            intent: "explain",
+            relevantFiles: m.sources || [],
+            intent: m.intent || "explain",
+            validation: m.validation,
           })),
         );
         setExpandedSources({});
@@ -177,6 +179,7 @@ export default function CompanionPage() {
                 content: data?.response || "No response generated.",
                 relevantFiles: data?.relevantFiles || [],
                 intent: data?.intent || "explain",
+                validation: data?.validation,
               }
             : msg,
         ),
@@ -406,6 +409,13 @@ export default function CompanionPage() {
                           )}
                         </div>
 
+                        {/* Content Validation Badge */}
+                        {msg.role === "assistant" && msg.validation && (
+                          <div className="w-full max-w-sm mt-1">
+                            <ValidationBadge validation={msg.validation} />
+                          </div>
+                        )}
+
                         {/* Assistant Actions */}
                         {msg.role === "assistant" && msg.content && (
                           <div className="flex items-center gap-1">
@@ -438,7 +448,7 @@ export default function CompanionPage() {
                                 <div className="grid grid-cols-1 gap-2 mt-2">
                                   {msg.relevantFiles.map((file, idx) => (
                                     <a
-                                      key={file.id || idx}
+                                      key={file.id || file._id || idx}
                                       href={file.fileUrl}
                                       target="_blank"
                                       rel="noreferrer"
