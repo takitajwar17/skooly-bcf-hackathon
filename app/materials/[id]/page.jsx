@@ -8,8 +8,22 @@ import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
-import { Loader2, ChevronLeft, Download, ExternalLink, FileText, Code, MonitorPlay, File, Link as LinkIcon } from "lucide-react";
+import { 
+  IconChevronLeft, 
+  IconDownload, 
+  IconExternalLink, 
+  IconFileText, 
+  IconCode, 
+  IconDeviceTv, 
+  IconFile,
+  IconLoader,
+  IconLink,
+  IconStack,
+  IconClock,
+  IconTag
+} from "@tabler/icons-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function MaterialPreviewPage() {
   const { id } = useParams();
@@ -37,35 +51,6 @@ export default function MaterialPreviewPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <SidebarProvider>
-        <AppSidebar variant="inset" />
-        <SidebarInset>
-          <SiteHeader />
-          <div className="flex flex-1 justify-center items-center">
-            <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    );
-  }
-
-  if (!material) {
-    return (
-      <SidebarProvider>
-        <AppSidebar variant="inset" />
-        <SidebarInset>
-          <SiteHeader />
-          <div className="flex flex-1 flex-col items-center justify-center gap-4">
-            <p className="text-muted-foreground">Material not found.</p>
-            <Button onClick={() => router.back()}>Go Back</Button>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-    );
-  }
-
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     toast.success("Link copied to clipboard");
@@ -73,7 +58,6 @@ export default function MaterialPreviewPage() {
 
   const getDownloadUrl = (url) => {
     if (!url) return "#";
-    // For Cloudinary, we can force download by adding fl_attachment
     if (url.includes("cloudinary.com")) {
       const parts = url.split("/upload/");
       if (parts.length === 2) {
@@ -83,15 +67,54 @@ export default function MaterialPreviewPage() {
     return url;
   };
 
+  if (loading) {
+    return (
+      <SidebarProvider
+        style={{
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)"
+        }}
+      >
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 justify-center items-center">
+            <IconLoader className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
+  if (!material) {
+    return (
+      <SidebarProvider
+        style={{
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)"
+        }}
+      >
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col items-center justify-center gap-4">
+            <p className="text-muted-foreground">Material not found.</p>
+            <Button onClick={() => router.back()} variant="outline">Go Back</Button>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
   const renderPreview = () => {
     const { type, fileUrl, content } = material;
 
     if (type === "pdf") {
       return (
-        <div className="w-full flex flex-col gap-2"> 
+        <div className="w-full h-full min-h-[75vh] rounded-xl border bg-muted/5 shadow-inner overflow-hidden">
           <iframe
             src={`${fileUrl}#toolbar=0`}
-            className="w-full h-[75vh] rounded-lg border shadow-lg bg-white"
+            className="w-full h-full min-h-[75vh] border-none"
             title={material.title}
           />
         </div>
@@ -102,15 +125,15 @@ export default function MaterialPreviewPage() {
       return (
         <div className="flex flex-col items-center justify-center py-32 border-2 border-dashed rounded-xl bg-muted/5">
           <div className="p-6 bg-primary/10 rounded-full mb-6">
-            <ExternalLink className="h-12 w-12 text-primary" />
+            <IconExternalLink className="h-12 w-12 text-primary" />
           </div>
           <h3 className="text-2xl font-bold mb-2">External Resource</h3>
           <p className="text-muted-foreground mb-8 max-w-md text-center">
             This material is hosted on an external website. Click the button below to open it in a new tab.
           </p>
-          <Button size="lg" asChild className="gap-2 px-8">
+          <Button size="lg" asChild className="gap-2 px-8 shadow-none">
             <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" />
+              <IconExternalLink className="h-4 w-4" />
               Open Resource
             </a>
           </Button>
@@ -120,18 +143,18 @@ export default function MaterialPreviewPage() {
 
     if (type === "code" || type === "text") {
       return (
-        <Card className="bg-[#0d1117] text-[#e6edf3] border-slate-800 shadow-xl overflow-hidden">
-          <CardHeader className="py-2 px-4 border-b border-slate-800 bg-[#161b22] flex flex-row items-center justify-between space-y-0">
+        <Card className="bg-[#0d1117] text-[#e6edf3] border-slate-800 shadow-none overflow-hidden rounded-xl">
+          <CardHeader className="py-3 px-6 border-b border-slate-800 bg-[#161b22] flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-xs font-mono flex items-center gap-2 text-slate-400">
-              <Code className="h-3.5 w-3.5" />
+              <IconCode className="h-4 w-4" />
               {material.title}
             </CardTitle>
-            <Badge variant="outline" className="text-[10px] bg-slate-800 border-slate-700 text-slate-300">
-              {type.toUpperCase()}
+            <Badge variant="outline" className="text-[10px] bg-slate-800 border-slate-700 text-slate-300 font-bold uppercase">
+              {type}
             </Badge>
           </CardHeader>
           <CardContent className="p-0">
-            <pre className="p-6 overflow-auto max-h-[70vh] text-sm font-mono leading-relaxed selection:bg-blue-500/30">
+            <pre className="p-8 overflow-auto max-h-[70vh] text-sm font-mono leading-relaxed selection:bg-blue-500/30">
               <code>{content || "No content available for preview."}</code>
             </pre>
           </CardContent>
@@ -139,28 +162,14 @@ export default function MaterialPreviewPage() {
       );
     }
 
-    if (type === "slide") {
-      if (fileUrl?.endsWith(".pdf")) {
-        return (
-          <div className="w-full flex flex-col gap-2">
-            <iframe
-              src={`${fileUrl}#toolbar=0`}
-              className="w-full h-[75vh] rounded-lg border shadow-lg bg-white"
-              title={material.title}
-            />
-          </div>
-        );
-      }
+    if (type === "slide" && fileUrl?.endsWith(".pdf")) {
       return (
-        <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed rounded-xl bg-muted/5">
-          <MonitorPlay className="h-16 w-16 text-muted-foreground mb-4 opacity-20" />
-          <p className="text-muted-foreground mb-6">Slides preview not supported for this format.</p>
-          <Button asChild variant="outline">
-            <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="gap-2">
-              <ExternalLink className="h-4 w-4" />
-              View in New Tab
-            </a>
-          </Button>
+        <div className="w-full h-full min-h-[75vh] rounded-xl border bg-muted/5 shadow-inner overflow-hidden">
+          <iframe
+            src={`${fileUrl}#toolbar=0`}
+            className="w-full h-full min-h-[75vh] border-none"
+            title={material.title}
+          />
         </div>
       );
     }
@@ -168,11 +177,11 @@ export default function MaterialPreviewPage() {
     const isImage = /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(fileUrl);
     if (isImage) {
       return (
-        <div className="flex justify-center bg-muted/10 rounded-xl border border-dashed p-8">
+        <div className="flex justify-center bg-muted/5 rounded-xl border border-dashed p-12">
           <img
             src={fileUrl}
             alt={material.title}
-            className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl"
+            className="max-w-full max-h-[75vh] object-contain rounded-lg border shadow-2xl"
           />
         </div>
       );
@@ -180,18 +189,18 @@ export default function MaterialPreviewPage() {
 
     return (
       <div className="flex flex-col items-center justify-center py-32 border-2 border-dashed rounded-xl bg-muted/5">
-        <File className="h-16 w-16 text-muted-foreground mb-4 opacity-20" />
+        <IconFile className="h-16 w-16 text-muted-foreground mb-4 opacity-20" />
         <p className="text-muted-foreground mb-6 font-medium">No preview available for this file type.</p>
         <div className="flex gap-3">
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild className="shadow-none">
             <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="gap-2">
-              <ExternalLink className="h-4 w-4" />
+              <IconExternalLink className="h-4 w-4" />
               Open Original
             </a>
           </Button>
-          <Button asChild>
+          <Button asChild className="shadow-none">
             <a href={getDownloadUrl(material.fileUrl)} className="gap-2">
-              <Download className="h-4 w-4" />
+              <IconDownload className="h-4 w-4" />
               Download Now
             </a>
           </Button>
@@ -202,11 +211,11 @@ export default function MaterialPreviewPage() {
 
   const getIcon = (type) => {
     switch (type) {
-      case "code": return <Code className="h-6 w-6 text-blue-500" />;
-      case "slide": return <MonitorPlay className="h-6 w-6 text-orange-500" />;
-      case "pdf": return <FileText className="h-6 w-6 text-red-500" />;
-      case "link": return <ExternalLink className="h-6 w-6 text-emerald-500" />;
-      default: return <File className="h-6 w-6 text-gray-500" />;
+      case "code": return <IconCode className="h-6 w-6 text-blue-500" />;
+      case "slide": return <IconDeviceTv className="h-6 w-6 text-orange-500" />;
+      case "pdf": return <IconFileText className="h-6 w-6 text-red-500" />;
+      case "link": return <IconLink className="h-6 w-6 text-emerald-500" />;
+      default: return <IconFile className="h-6 w-6 text-slate-500" />;
     }
   };
 
@@ -220,68 +229,78 @@ export default function MaterialPreviewPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-8 max-w-7xl mx-auto w-full">
-          <div className="flex flex-col gap-6">
+        <div className="flex flex-1 flex-col gap-6 p-4 md:p-8 max-w-6xl mx-auto w-full">
+          
+          <div className="flex flex-col gap-8">
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-fit -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+                className="w-fit -ml-2 text-muted-foreground hover:text-foreground transition-colors group"
                 onClick={() => router.back()}
               >
-                <ChevronLeft className="h-4 w-4 mr-1" />
+                <IconChevronLeft className="size-4 mr-1 group-hover:-translate-x-1 transition-transform" />
                 Back to Materials
               </Button>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" onClick={handleCopyLink} title="Copy Link">
-                  <LinkIcon className="h-4 w-4" />
-                </Button>
-              </div>
+              <Button variant="ghost" size="icon" onClick={handleCopyLink} title="Copy Link" className="size-9 rounded-full">
+                <IconLink className="size-4" />
+              </Button>
             </div>
             
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b pb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b pb-8">
               <div className="flex items-start gap-5">
-                <div className="p-4 bg-muted rounded-2xl shadow-inner">
+                <div className="p-4 bg-muted/50 rounded-2xl border border-muted shadow-inner">
                   {getIcon(material.type)}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary" className="rounded-md uppercase text-[10px] px-2">{material.type}</Badge>
-                    <Badge variant="outline" className="rounded-md text-[10px] px-2">{material.course}</Badge>
-                    <span className="text-xs text-muted-foreground">Week {material.week}</span>
+                    <Badge variant="outline" className="rounded-md uppercase text-[10px] font-bold tracking-wider px-2 border-primary/20 text-primary bg-primary/5">
+                      {material.type}
+                    </Badge>
+                    <Badge variant="outline" className="rounded-md text-[10px] font-medium px-2 bg-muted/50">
+                      <IconStack className="size-3 mr-1" />
+                      {material.course}
+                    </Badge>
+                    <Badge variant="outline" className="rounded-md text-[10px] font-medium px-2 bg-muted/50">
+                      <IconClock className="size-3 mr-1" />
+                      Week {material.week}
+                    </Badge>
                   </div>
                   <h1 className="text-3xl font-bold tracking-tight">{material.title}</h1>
-                  <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-                    {material.description || `Course material for ${material.topic}`}
+                  <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed italic">
+                    {material.description || `Learning resource for ${material.topic}`}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 w-full md:w-auto">
-                <Button variant="outline" className="flex-1 md:flex-none gap-2" asChild>
+                <Button variant="outline" className="flex-1 md:flex-none h-10 gap-2 shadow-none" asChild>
                   <a href={material.fileUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
+                    <IconExternalLink className="size-4" />
                     Open Original
                   </a>
                 </Button>
-                <Button className="flex-1 md:flex-none gap-2 shadow-sm" asChild>
+                <Button className="flex-1 md:flex-none h-10 gap-2 shadow-none" asChild>
                   <a href={getDownloadUrl(material.fileUrl)}>
-                    <Download className="h-4 w-4" />
+                    <IconDownload className="size-4" />
                     Download
                   </a>
                 </Button>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {material.tags?.map(tag => (
-                <Badge key={tag} variant="secondary" className="font-normal text-xs bg-muted/50 hover:bg-muted transition-colors cursor-default">
-                  #{tag}
-                </Badge>
-              ))}
-            </div>
+            {material.tags?.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {material.tags.map(tag => (
+                  <Badge key={tag} variant="secondary" className="font-normal text-[10px] bg-muted/30 hover:bg-muted transition-colors cursor-default border-none shadow-none px-2 py-0.5">
+                    <IconTag className="size-3 mr-1 opacity-50" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both">
             {renderPreview()}
           </div>
         </div>
