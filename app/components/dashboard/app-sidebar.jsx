@@ -11,6 +11,7 @@ import {
   IconSparkles,
   IconUsersGroup,
   IconNotebook,
+  IconVideo,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/app/components/dashboard/nav-main";
@@ -45,6 +46,11 @@ const data = {
       title: "My Materials",
       url: "/my-materials",
       icon: IconNotebook,
+    },
+    {
+      title: "Videos",
+      url: "/videos",
+      icon: IconVideo,
     },
     {
       title: "Skooly AI",

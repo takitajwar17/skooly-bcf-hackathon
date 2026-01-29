@@ -24,18 +24,65 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import VideoGenerationButton from "@/app/components/video/VideoGenerationButton";
+import VideoStatusPoll from "@/app/components/video/VideoStatusPoll";
+import VideoPlayer from "@/app/components/video/VideoPlayer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { IconVideo } from "@tabler/icons-react";
 
 export default function MaterialPreviewPage() {
   const { id } = useParams();
   const router = useRouter();
   const [material, setMaterial] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [generatedVideo, setGeneratedVideo] = useState(null);
+  const [videos, setVideos] = useState([]);
+  const [loadingVideos, setLoadingVideos] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchMaterial();
+      fetchVideos();
     }
   }, [id]);
+
+  const fetchVideos = async () => {
+    setLoadingVideos(true);
+    try {
+      const res = await fetch(`/api/videos/generate?sourceMaterialId=${id}`);
+      if (res.ok) {
+        const json = await res.json();
+        // Videos are already filtered by sourceMaterialId from the API
+        const materialVideos = json.videos || [];
+        setVideos(materialVideos);
+        // If there's a processing video, set it for polling
+        const processingVideo = materialVideos.find(
+          (v) => v.status === "processing" || v.status === "pending"
+        );
+        if (processingVideo) {
+          setGeneratedVideo(processingVideo);
+        } else if (materialVideos.length > 0 && !generatedVideo) {
+          // Set the most recent completed video if no processing video
+          const latestVideo = materialVideos[0];
+          if (latestVideo.status === "completed") {
+            setGeneratedVideo(null); // Clear if completed
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching videos:", error);
+    } finally {
+      setLoadingVideos(false);
+    }
+  };
+
+  const handleVideoGenerated = (video) => {
+    setGeneratedVideo(video);
+    // Refresh videos list after a short delay
+    setTimeout(() => {
+      fetchVideos();
+    }, 2000);
+  };
 
   const fetchMaterial = async () => {
     try {
@@ -273,6 +320,12 @@ export default function MaterialPreviewPage() {
                 </div>
               </div>
               <div className="flex gap-2 w-full md:w-auto">
+                <VideoGenerationButton
+                  material={material}
+                  onVideoGenerated={handleVideoGenerated}
+                  variant="outline"
+                  size="default"
+                />
                 <Button variant="outline" className="flex-1 md:flex-none h-10 gap-2 shadow-none" asChild>
                   <a href={material.fileUrl} target="_blank" rel="noopener noreferrer">
                     <IconExternalLink className="size-4" />
@@ -300,9 +353,100 @@ export default function MaterialPreviewPage() {
             )}
           </div>
 
-          <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both">
-            {renderPreview()}
-          </div>
+          <Tabs defaultValue="preview" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="preview">Material Preview</TabsTrigger>
+              <TabsTrigger value="videos" className="gap-2">
+                <IconVideo className="h-4 w-4" />
+                Generated Videos {videos.length > 0 && `(${videos.length})`}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="preview" className="mt-4">
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both">
+                {renderPreview()}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="videos" className="mt-4 space-y-4">
+              {/* Show status poll if video is being generated */}
+              {generatedVideo && (generatedVideo.status === "processing" || generatedVideo.status === "pending") && (
+                <VideoStatusPoll
+                  videoId={generatedVideo._id || generatedVideo.id}
+                  onComplete={(completedVideo) => {
+                    setGeneratedVideo(completedVideo);
+                    fetchVideos();
+                  }}
+                />
+              )}
+
+              {/* Show completed videos */}
+              {videos.length > 0 ? (
+                <div className="space-y-4">
+                  {videos
+                    .filter((v) => v.status === "completed" && v.videoUrl)
+                    .map((video) => (
+                      <Card key={video._id || video.id}>
+                        <CardHeader>
+                          <CardTitle className="text-lg">{video.title}</CardTitle>
+                          <div className="flex gap-2 mt-2">
+                            <Badge variant="outline">{video.resolution}</Badge>
+                            <Badge variant="outline">{video.duration}s</Badge>
+                            <Badge variant="outline">{video.aspectRatio}</Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <VideoPlayer
+                            videoUrl={video.videoUrl}
+                            metadata={{
+                              duration: video.duration,
+                              resolution: video.resolution,
+                              aspectRatio: video.aspectRatio,
+                            }}
+                            title={video.title}
+                          />
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <IconVideo className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                    <p className="text-muted-foreground mb-4">
+                      No videos generated yet for this material.
+                    </p>
+                    <VideoGenerationButton
+                      material={material}
+                      onVideoGenerated={handleVideoGenerated}
+                      variant="default"
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Show failed videos */}
+              {videos.some((v) => v.status === "failed") && (
+                <Card className="border-destructive/50">
+                  <CardHeader>
+                    <CardTitle className="text-sm text-destructive">Failed Generations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {videos
+                      .filter((v) => v.status === "failed")
+                      .map((video) => (
+                        <div key={video._id || video.id} className="p-3 bg-destructive/10 rounded-lg mb-2">
+                          <p className="text-sm font-medium">{video.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {video.errorMessage || "Generation failed"}
+                          </p>
+                        </div>
+                      ))}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </SidebarInset>
     </SidebarProvider>
