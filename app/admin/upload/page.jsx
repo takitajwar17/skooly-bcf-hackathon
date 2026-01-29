@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useDropzone } from "react-dropzone";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { AppSidebar } from "@/app/components/dashboard/app-sidebar"
+import { SiteHeader } from "@/app/components/dashboard/site-header"
+import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar"
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
-import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
 import {
   Select,
@@ -13,296 +15,282 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { Upload, FileText, X, Check, Loader2 } from "lucide-react";
+import { Textarea } from "@/app/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { toast } from "sonner";
+import { Loader2, UploadCloud, ChevronLeft, Plus } from "lucide-react";
+import Link from "next/link";
 
-export default function AdminUploadPage() {
+export default function UploadPage() {
+  const router = useRouter();
+  const [isUploading, setIsUploading] = useState(false);
+  const [existingCourses, setExistingCourses] = useState([]);
+  const [isNewCourse, setIsNewCourse] = useState(false);
+  
+  // Form State
+  const [title, setTitle] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [newCourseName, setNewCourseName] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Theory");
+  const [type, setType] = useState("pdf");
+  const [topic, setTopic] = useState("");
+  const [week, setWeek] = useState("");
+  const [tags, setTags] = useState("");
   const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "theory",
-    topic: "",
-    week: 1,
-    tags: "",
-  });
 
-  const onDrop = useCallback(
-    (acceptedFiles) => {
-      if (acceptedFiles.length > 0) {
-        const selectedFile = acceptedFiles[0];
-        setFile(selectedFile);
-        // Auto-fill title from filename if empty
-        if (!formData.title) {
-          setFormData((prev) => ({
-            ...prev,
-            title: selectedFile.name.replace(/\.[^/.]+$/, ""),
-          }));
-        }
-      }
-    },
-    [formData.title],
-  );
+  useEffect(() => {
+    fetchCourses();
+  }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "application/pdf": [".pdf"],
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-        [".docx"],
-      "text/plain": [".txt"],
-      "text/markdown": [".md"],
-      "application/javascript": [".js", ".jsx"],
-      "application/typescript": [".ts", ".tsx"],
-      "text/x-python": [".py"],
-      "text/x-java": [".java"],
-      "text/x-c": [".c", ".h"],
-      "text/x-c++src": [".cpp"],
-    },
-    maxFiles: 1,
-    maxSize: 10 * 1024 * 1024, // 10MB
-  });
+  const fetchCourses = async () => {
+    try {
+      const res = await fetch("/api/materials/courses");
+      const json = await res.json();
+      setExistingCourses(json.data || []);
+    } catch (error) {
+      console.error("Failed to fetch courses", error);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const finalCourse = isNewCourse ? newCourseName : selectedCourse;
+
     if (!file) {
-      toast.error("Please select a file to upload");
+      toast.error("Please select a file");
+      return;
+    }
+    if (!finalCourse) {
+      toast.error("Please select or enter a course");
       return;
     }
 
-    setUploading(true);
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("title", title);
+    formData.append("course", finalCourse);
+    formData.append("description", description);
+    formData.append("category", category);
+    formData.append("type", type);
+    formData.append("topic", topic);
+    formData.append("week", week);
+    formData.append("tags", tags);
 
     try {
-      const data = new FormData();
-      data.append("file", file);
-      data.append("title", formData.title);
-      data.append("description", formData.description);
-      data.append("category", formData.category);
-      data.append("topic", formData.topic);
-      data.append("week", formData.week.toString());
-      data.append("tags", formData.tags);
-
-      const response = await fetch("/api/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
-        body: data,
+        body: formData,
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success("Material uploaded successfully!");
-        // Reset form
-        setFile(null);
-        setFormData({
-          title: "",
-          description: "",
-          category: "theory",
-          topic: "",
-          week: 1,
-          tags: "",
-        });
-      } else {
-        toast.error(result.error || "Upload failed");
+      if (!res.ok) {
+        throw new Error("Upload failed");
       }
+
+      toast.success("Material uploaded successfully!");
+      router.push("/materials");
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error(error);
       toast.error("Failed to upload material");
     } finally {
-      setUploading(false);
+      setIsUploading(false);
     }
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-2xl">
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <Upload className="h-6 w-6 text-primary" />
-            Upload Course Material
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* File Upload Zone */}
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                isDragActive
-                  ? "border-primary bg-primary/10"
-                  : "border-muted-foreground/25 hover:border-primary/50"
-              }`}
-            >
-              <input {...getInputProps()} />
-              {file ? (
-                <div className="flex items-center justify-center gap-3">
-                  <FileText className="h-8 w-8 text-primary" />
-                  <div className="text-left">
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+    <SidebarProvider
+      style={{
+        "--sidebar-width": "calc(var(--spacing) * 72)",
+        "--header-height": "calc(var(--spacing) * 12)"
+      }}
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+          <div className="w-full">
+            <Link href="/materials" className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back to Course Materials
+            </Link>
+            
+            <Card className="shadow-sm border-none bg-muted/20">
+              <CardHeader className="px-6 pt-6">
+                <CardTitle className="text-2xl">Upload Course Material</CardTitle>
+                <CardDescription>Add new resources. They will be automatically categorized and prepared for AI search.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  
+                  {/* File Upload Zone */}
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="file">File</Label>
+                    <Input id="file" type="file" onChange={handleFileChange} className="cursor-pointer file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFile(null);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input 
+                        id="title" 
+                        value={title} 
+                        onChange={(e) => setTitle(e.target.value)} 
+                        placeholder="e.g. Intro to DBs" 
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="course">Course</Label>
+                      <div className="flex flex-col gap-2">
+                        {!isNewCourse ? (
+                          <div className="flex gap-2">
+                            <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                              <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="Select Course" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {existingCourses.map(c => (
+                                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="icon" 
+                              onClick={() => setIsNewCourse(true)}
+                              title="Create New Course"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Input 
+                              value={newCourseName} 
+                              onChange={(e) => setNewCourseName(e.target.value)} 
+                              placeholder="New course name..." 
+                              className="flex-1"
+                              autoFocus
+                            />
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setIsNewCourse(false)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="topic">Topic</Label>
+                      <Input 
+                        id="topic" 
+                        value={topic} 
+                        onChange={(e) => setTopic(e.target.value)} 
+                        placeholder="e.g. Normalization" 
+                        required 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Category</Label>
+                      <Select value={category} onValueChange={setCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Theory">Theory</SelectItem>
+                          <SelectItem value="Lab">Lab</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="week">Week</Label>
+                      <Input 
+                        id="week" 
+                        type="number" 
+                        value={week} 
+                        onChange={(e) => setWeek(e.target.value)} 
+                        placeholder="e.g. 1" 
+                        required 
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="type">Type</Label>
+                      <Select value={type} onValueChange={setType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pdf">PDF</SelectItem>
+                          <SelectItem value="slide">Slide</SelectItem>
+                          <SelectItem value="code">Code</SelectItem>
+                          <SelectItem value="doc">Document</SelectItem>
+                          <SelectItem value="text">Text</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tags">Tags (comma separated)</Label>
+                    <Input 
+                      id="tags" 
+                      value={tags} 
+                      onChange={(e) => setTags(e.target.value)} 
+                      placeholder="sql, database, relational" 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea 
+                      id="description" 
+                      value={description} 
+                      onChange={(e) => setDescription(e.target.value)} 
+                      placeholder="Brief description of the material..." 
+                      className="min-h-[80px]"
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={isUploading}>
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing Content...
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="mr-2 h-4 w-4" />
+                        Upload Material
+                      </>
+                    )}
                   </Button>
-                </div>
-              ) : (
-                <>
-                  <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">
-                    {isDragActive
-                      ? "Drop the file here..."
-                      : "Drag & drop a file, or click to select"}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    PDF, DOCX, TXT, MD, or code files (max 10MB)
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, title: e.target.value }))
-                }
-                placeholder="e.g., Database Normalization Lecture"
-                required
-              />
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Brief description of this material..."
-                rows={3}
-              />
-            </div>
-
-            {/* Category & Week Row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Category *</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, category: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="theory">Theory</SelectItem>
-                    <SelectItem value="lab">Lab</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="week">Week</Label>
-                <Input
-                  id="week"
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={formData.week}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      week: parseInt(e.target.value) || 1,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Topic */}
-            <div className="space-y-2">
-              <Label htmlFor="topic">Topic *</Label>
-              <Input
-                id="topic"
-                value={formData.topic}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, topic: e.target.value }))
-                }
-                placeholder="e.g., Database Design, Sorting Algorithms"
-                required
-              />
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (comma-separated)</Label>
-              <Input
-                id="tags"
-                value={formData.tags}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, tags: e.target.value }))
-                }
-                placeholder="e.g., sql, normalization, 3nf"
-              />
-              {formData.tags && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {formData.tags.split(",").map((tag, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs">
-                      {tag.trim()}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={uploading || !file}
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading & Generating Embeddings...
-                </>
-              ) : (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Upload Material
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

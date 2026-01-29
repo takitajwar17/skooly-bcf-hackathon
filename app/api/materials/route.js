@@ -1,88 +1,50 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import connectDB from "@/lib/mongodb/mongoose";
+import { connect } from "@/lib/mongodb/mongoose";
 import Material from "@/lib/models/Material";
 
-// GET - List materials with optional filters
+/**
+ * GET /api/materials
+ * List all materials with optional filtering
+ */
 export async function GET(request) {
   try {
-    await connectDB();
-
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
-    const type = searchParams.get("type");
-    const topic = searchParams.get("topic");
     const week = searchParams.get("week");
-    const tag = searchParams.get("tag");
-    const limit = parseInt(searchParams.get("limit")) || 50;
-    const page = parseInt(searchParams.get("page")) || 1;
+    const topic = searchParams.get("topic");
 
-    // Build filter
-    const filter = {};
-    if (category) filter.category = category;
-    if (type) filter.type = type;
-    if (topic) filter.topic = { $regex: topic, $options: "i" };
-    if (week) filter.week = parseInt(week);
-    if (tag) filter.tags = tag;
+    console.log("API: Materials request received");
+    
+    // Add timeout wrapper
+    const connectWithTimeout = Promise.race([
+      connect(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database connection timeout')), 5000)
+      )
+    ]);
+    
+    await connectWithTimeout;
+    console.log("API: Database connected");
 
-    // Get total count
-    const total = await Material.countDocuments(filter);
+    let query = {};
+    if (category) query.category = category;
+    if (week) query.week = parseInt(week);
+    if (topic) query.topic = { $regex: topic, $options: "i" };
 
-    // Get materials with pagination
-    const materials = await Material.find(filter)
-      .select("-content -filePath") // Exclude large fields
+    console.log("Fetching materials with query:", query);
+
+    const materials = await Material.find(query)
+      .select("-content")
       .sort({ week: 1, createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+      .maxTimeMS(5000);
 
-    return NextResponse.json({
-      materials,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
-      },
-    });
+    return NextResponse.json({ data: materials });
   } catch (error) {
-    console.error("Error fetching materials:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch materials" },
-      { status: 500 },
-    );
-  }
-}
-
-// POST - Create a material (text-only, no file upload)
-export async function POST(request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    await connectDB();
-
-    const data = await request.json();
-
-    const material = await Material.create({
-      title: data.title,
-      description: data.description || "",
-      category: data.category || "theory",
-      type: data.type || "notes",
-      topic: data.topic || "General",
-      week: data.week || 1,
-      tags: data.tags || [],
-      content: data.content || "",
-      uploadedBy: userId,
-    });
-
-    return NextResponse.json({ success: true, material }, { status: 201 });
-  } catch (error) {
-    console.error("Error creating material:", error);
-    return NextResponse.json(
-      { error: "Failed to create material" },
-      { status: 500 },
-    );
+    console.error("Materials API error:", error);
+    return NextResponse.json({ 
+      error: error.message || "Failed to fetch materials",
+      details: error.name === 'MongoTimeoutError' ? 'Database connection timeout' : undefined
+    }, { status: 500 });
   }
 }
