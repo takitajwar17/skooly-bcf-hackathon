@@ -7,6 +7,7 @@ import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { ChatHistorySidebar } from "@/app/components/chat/ChatHistorySidebar";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -51,6 +52,7 @@ export default function CompanionPage() {
   const scrollAreaRef = useRef(null);
   const [chatId, setChatId] = useState(null);
   const [expandedSources, setExpandedSources] = useState({});
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
@@ -77,6 +79,37 @@ export default function CompanionPage() {
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard!");
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setChatId(null);
+    setExpandedSources({});
+  };
+
+  const handleSelectChat = async (selectedChatId) => {
+    if (selectedChatId === chatId) return;
+
+    try {
+      const response = await fetch(`/api/chat?chatId=${selectedChatId}`);
+      const data = await response.json();
+
+      if (data.chat && data.chat.messages) {
+        setChatId(selectedChatId);
+        setMessages(
+          data.chat.messages.map((m, i) => ({
+            id: nanoid(),
+            role: m.role,
+            content: m.content,
+            relevantFiles: [],
+            intent: "explain",
+          })),
+        );
+        setExpandedSources({});
+      }
+    } catch (error) {
+      toast.error("Failed to load chat");
+    }
   };
 
   const regenerateResponse = async (messageId) => {
@@ -187,7 +220,17 @@ export default function CompanionPage() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="flex flex-1 flex-col h-[calc(100vh-var(--header-height))] overflow-hidden">
+        <div className="flex flex-1 h-[calc(100vh-var(--header-height))] overflow-hidden">
+          {/* Chat History Sidebar */}
+          <ChatHistorySidebar
+            onNewChat={handleNewChat}
+            onSelectChat={handleSelectChat}
+            currentChatId={chatId}
+            isCollapsed={historyCollapsed}
+            onToggleCollapse={() => setHistoryCollapsed(!historyCollapsed)}
+          />
+
+          {/* Main Chat Area */}
           <div className="flex flex-col flex-1 gap-4 py-4 md:gap-6 md:py-6 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 lg:px-6">
