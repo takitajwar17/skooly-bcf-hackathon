@@ -4,6 +4,7 @@ import { connect } from "@/lib/mongodb/mongoose";
 import Material from "@/lib/models/Material";
 import { isAdmin } from "@/lib/actions/user";
 import { deleteFromCloudinary } from "@/lib/cloudinary";
+import { deleteFileSearchDocument } from "@/lib/ai/fileSearchStore";
 
 /**
  * GET /api/materials/[id]
@@ -21,7 +22,10 @@ export async function GET(request, { params }) {
 
     const material = await Material.findById(id);
     if (!material) {
-      return NextResponse.json({ error: "Material not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Material not found" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({ data: material });
@@ -32,7 +36,7 @@ export async function GET(request, { params }) {
 
 /**
  * DELETE /api/materials/[id]
- * Delete a material and its associated file from Cloudinary
+ * Delete a material and its associated files from Cloudinary and FileSearchStore
  */
 export async function DELETE(request, { params }) {
   try {
@@ -46,13 +50,37 @@ export async function DELETE(request, { params }) {
 
     const material = await Material.findById(id);
     if (!material) {
-      return NextResponse.json({ error: "Material not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Material not found" },
+        { status: 404 },
+      );
+    }
+
+    // Delete from FileSearchStore
+    if (material.fileSearchDocumentId) {
+      const fileSearchStoreName = process.env.FILE_SEARCH_STORE_NAME;
+      if (fileSearchStoreName) {
+        try {
+          await deleteFileSearchDocument(
+            fileSearchStoreName,
+            material.fileSearchDocumentId,
+          );
+          console.log(
+            `✓ Deleted from FileSearchStore: ${material.fileSearchDocumentId}`,
+          );
+        } catch (e) {
+          console.error("FileSearchStore deletion failed:", e);
+        }
+      }
     }
 
     // Delete the file from Cloudinary
     if (material.cloudinaryPublicId) {
       try {
         await deleteFromCloudinary(material.cloudinaryPublicId);
+        console.log(
+          `✓ Deleted from Cloudinary: ${material.cloudinaryPublicId}`,
+        );
       } catch (e) {
         console.error("Cloudinary deletion failed:", e);
       }

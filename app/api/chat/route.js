@@ -45,8 +45,8 @@ export async function POST(request) {
       timestamp: new Date(),
     });
 
-    // Get RAG context for the question
-    const { context, sources } = await getRAGContext(message, { limit: 5 });
+    // Get RAG context for the question (now includes fileUrls for file-based RAG)
+    const { context, sources, fileUrls } = await getRAGContext(message, { limit: 5 });
 
     // Build conversation history for context (last 10 messages)
     const recentHistory = chat.messages.slice(-10).map((m) => ({
@@ -54,11 +54,13 @@ export async function POST(request) {
       content: m.content,
     }));
 
-    // Generate AI response
+    // Generate AI response with both text context and file URLs
+    // Gemini will read files directly for better understanding of PDFs and documents
     const aiResponse = await generateResponse(
       message,
       context,
       recentHistory.slice(0, -1), // Exclude the just-added user message
+      fileUrls, // Pass file URLs for Gemini to process
     );
 
     // Add assistant message
@@ -80,7 +82,9 @@ export async function POST(request) {
         title: s.title,
         category: s.category,
         topic: s.topic,
+        fileUrl: s.fileUrl,
       })),
+      filesProcessed: fileUrls.length,
     });
   } catch (error) {
     console.error("Chat error:", error);

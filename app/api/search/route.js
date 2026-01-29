@@ -1,68 +1,75 @@
 import { NextResponse } from "next/server";
-import { getRAGContext, semanticSearch } from "@/lib/ai/rag";
-import { generateResponse } from "@/lib/ai/embedding";
+import { searchWithFileSearch } from "@/lib/ai/fileSearchStore";
 import connectDB from "@/lib/mongodb/mongoose";
 
 export async function POST(request) {
   try {
+    console.log("\n========== SEARCH API CALLED ==========");
     await connectDB();
 
-    const { query, category, mode = "search" } = await request.json();
+    const { query, mode = "rag" } = await request.json();
+    console.log("Request Body:", { query, mode });
 
     if (!query) {
+      console.log("ERROR: No query provided");
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
     }
 
-    // Mode: "search" for just results, "rag" for AI-augmented response
+    const fileSearchStoreName = process.env.FILE_SEARCH_STORE_NAME;
+    console.log("FileSearchStore Name:", fileSearchStoreName);
+
+    if (!fileSearchStoreName) {
+      console.log("ERROR: FILE_SEARCH_STORE_NAME not configured");
+      return NextResponse.json(
+        { error: "FileSearchStore not configured" },
+        { status: 500 },
+      );
+    }
+
+    console.log("Calling searchWithFileSearch...");
+    // Use Gemini FileSearch tool for both search and RAG modes
+    const result = await searchWithFileSearch(query, fileSearchStoreName, mode);
+
+    console.log("\n=== Search API Result ===");
+    console.log("Result Text Length:", result.text?.length || 0);
+    console.log("Result Citations Count:", result.citations?.length || 0);
+
     if (mode === "search") {
-      // Simple semantic search - return matching chunks
-      const results = await semanticSearch(query, { category, limit: 10 });
-
-      return NextResponse.json({
+      console.log("Mode: SEARCH - Returning structured results");
+      const searchResults = {
         success: true,
-        results: results.map((r) => ({
-          id: r._id,
-          content: r.content,
-          score: r.score,
-          material: r.material
-            ? {
-                id: r.material._id,
-                title: r.material.title,
-                category: r.material.category,
-                topic: r.material.topic,
-                type: r.material.type,
-                week: r.material.week,
-                fileUrl: r.material.fileUrl,
-              }
-            : null,
+        citations: result.citations.map((citation, idx) => ({
+          id: citation.id || `citation-${idx}`,
+          title: citation.title || `Document ${idx + 1}`,
+          text: citation.text || "",
+          snippet: citation.text?.substring(0, 150) || "",
+          source: citation.source || fileSearchStoreName,
+          metadata: citation.metadata || {},
         })),
-      });
+        response: result.text,
+      };
+      console.log("Search Results Count:", searchResults.citations.length);
+      console.log("========================================\n");
+      return NextResponse.json(searchResults);
     } else {
-      // RAG mode - generate AI response with context
-      const { context, sources } = await getRAGContext(query, {
-        category,
-        limit: 5,
-      });
-
-      if (!context) {
-        return NextResponse.json({
-          success: true,
-          response:
-            "I couldn't find any relevant information in the course materials. Please try a different query or check if materials have been uploaded.",
-          sources: [],
-        });
-      }
-
-      const response = await generateResponse(query, context);
-
-      return NextResponse.json({
+      console.log("Mode: RAG - Returning AI response with citations");
+      const ragResponse = {
         success: true,
-        response,
-        sources,
-      });
+        response: result.text,
+        citations: result.citations,
+        metadata: result.metadata,
+      };
+      console.log("========================================\n");
+      return NextResponse.json(ragResponse);
     }
   } catch (error) {
-    console.error("Search error:", error);
-    return NextResponse.json({ error: "Search failed" }, { status: 500 });
+    console.error("\n========== SEARCH API ERROR ==========");
+    console.error("Error Message:", error.message);
+    console.error("Error Stack:", error.stack);
+    console.error("======================================\n");
+    return NextResponse.json(
+      { error: error.message || "Search failed" },
+      { status: 500 },
+    );
   }
 }

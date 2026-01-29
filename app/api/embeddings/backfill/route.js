@@ -105,7 +105,7 @@ export async function POST(request) {
         console.log(`  📝 Content length: ${material.content.length} characters`);
         console.log(`  🔄 Creating embeddings...`);
         
-        // Create embeddings
+        // Create embeddings (pass fileUrl for file-based RAG when content is a URL)
         const embeddingCount = await createEmbeddings(
           material._id,
           material.content,
@@ -115,6 +115,7 @@ export async function POST(request) {
             topic: material.topic,
             type: material.type,
             week: material.week,
+            fileUrl: material.fileUrl, // Pass fileUrl for file-based RAG
           }
         );
         
