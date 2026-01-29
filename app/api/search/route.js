@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRAGContext, semanticSearch } from "@/lib/ai/rag";
-import { generateResponse } from "@/lib/ai/gemini";
+import { generateResponse } from "@/lib/ai/embedding";
 import connectDB from "@/lib/mongodb/mongoose";
 
 export async function POST(request) {

@@ -8,6 +8,7 @@ import Material from "@/lib/models/Material";
 import { parseFile } from "@/lib/parsers/fileParser";
 import { isAdmin } from "@/lib/actions/user";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { createEmbeddings } from "@/lib/ai/rag";
 
 export async function POST(request) {
   console.log("=== UPLOAD API CALLED ===");
@@ -108,6 +109,30 @@ export async function POST(request) {
       uploadedBy: userId,
     });
     console.log("   Material created:", material._id);
+
+    // 9. Create embeddings for semantic search
+    console.log("9. Creating embeddings for semantic search...");
+    if (content && content.length > 0) {
+      try {
+        const embeddingCount = await createEmbeddings(
+          material._id,
+          content,
+          {
+            title,
+            category,
+            topic,
+            type,
+            week: parseInt(week),
+          }
+        );
+        console.log(`   ✓ Created ${embeddingCount} embedding chunks for vector search`);
+      } catch (embeddingError) {
+        console.error("   ✗ Embedding creation failed:", embeddingError);
+        // Don't fail the upload if embeddings fail - material is still saved
+      }
+    } else {
+      console.log("   ⚠ No content to embed (file might be empty or parsing failed)");
+    }
 
     console.log("=== UPLOAD SUCCESS ===");
     return NextResponse.json({ data: material }, { status: 201 });

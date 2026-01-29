@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getRAGContext } from "@/lib/ai/rag";
-import { generateTheoryContent, generateLabContent } from "@/lib/ai/gemini";
+import { generateTheoryContent, generateLabContent } from "@/lib/ai/embedding";
 import connectDB from "@/lib/mongodb/mongoose";
 
 export async function POST(request) {

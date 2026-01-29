@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import connectDB from "@/lib/mongodb/mongoose";
 import ChatHistory from "@/lib/models/ChatHistory";
 import { getRAGContext } from "@/lib/ai/rag";
-import { generateResponse } from "@/lib/ai/gemini";
+import { generateResponse } from "@/lib/ai/embedding";
 
 // POST - Send a message and get AI response
 export async function POST(request) {
