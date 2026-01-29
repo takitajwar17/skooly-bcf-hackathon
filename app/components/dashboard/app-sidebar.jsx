@@ -9,6 +9,7 @@ import {
   IconSearch,
   IconSettings,
   IconSparkles,
+  IconUsersGroup,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/app/components/dashboard/nav-main"
@@ -22,6 +23,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarGroup,
+  SidebarGroupContent,
 } from "@/app/components/ui/sidebar"
 
 const data = {
@@ -41,6 +44,11 @@ const data = {
       url: "/companion",
       icon: IconSparkles,
     },
+    {
+      title: "Community",
+      url: "/community",
+      icon: IconUsersGroup,
+    },
   ],
   navSecondary: [
     {
@@ -55,7 +63,7 @@ const data = {
     },
     {
       title: "Search",
-      url: "#",
+      url: "/search",
       icon: IconSearch,
     },
   ],

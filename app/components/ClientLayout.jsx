@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * ClientLayout - Simple wrapper for client-side rendering
- * Can be extended later for global client-side logic if needed
+ * ClientLayout – wrapper for client-side rendering.
+ * Renders children only (no spotlight).
  */
 export default function ClientLayout({ children }) {
   return <>{children}</>;

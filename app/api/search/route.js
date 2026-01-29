@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { searchWithFileSearch } from "@/lib/ai/fileSearchStore";
 import connectDB from "@/lib/mongodb/mongoose";
+import Material from "@/lib/models/Material";
 
 export async function POST(request) {
   try {
@@ -41,18 +42,43 @@ export async function POST(request) {
       );
     }
 
-    if (mode === "search") {
-      console.log("Mode: SEARCH - Returning structured results");
-      const searchResults = {
-        success: true,
-        citations: result.citations.map((citation, idx) => ({
+    // Fetch material IDs from database based on citations
+    const enrichedCitations = await Promise.all(
+      result.citations.map(async (citation, idx) => {
+        // Find material by matching title or using metadata if available
+        // The FileSearch metadata often contains document details
+        const documentId = citation.metadata?.documentId || citation.id;
+        
+        let material = null;
+        if (citation.metadata?.documentId) {
+          material = await Material.findOne({ fileSearchDocumentId: citation.metadata.documentId });
+        }
+        
+        // Fallback to title matching if documentId doesn't work
+        if (!material && citation.title) {
+          material = await Material.findOne({ title: citation.title });
+        }
+
+        return {
           id: citation.id || `citation-${idx}`,
           title: citation.title || `Document ${idx + 1}`,
           text: citation.text || "",
           snippet: citation.text?.substring(0, 150) || "",
           source: citation.source || fileSearchStoreName,
           metadata: citation.metadata || {},
-        })),
+          materialId: material?._id?.toString() || null,
+          materialType: material?.type || "pdf",
+          materialTopic: material?.topic || "",
+          materialWeek: material?.week || "",
+        };
+      })
+    );
+
+    if (mode === "search") {
+      console.log("Mode: SEARCH - Returning structured results");
+      const searchResults = {
+        success: true,
+        citations: enrichedCitations,
         response: result.text,
       };
       console.log("Search Results Count:", searchResults.citations.length);
@@ -63,7 +89,7 @@ export async function POST(request) {
       const ragResponse = {
         success: true,
         response: result.text,
-        citations: result.citations,
+        citations: enrichedCitations,
         metadata: result.metadata,
       };
       console.log("========================================\n");

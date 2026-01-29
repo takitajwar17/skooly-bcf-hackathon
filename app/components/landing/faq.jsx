@@ -9,39 +9,43 @@ import { cn } from "@/lib/utils";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { PlusIcon } from "lucide-react";
 
+/** FAQ focused on the AI supplementary learning platform (theory, lab, search, generation, chat). */
 const faq = [
   {
-    question: "What is your return policy?",
+    question: "What kinds of course materials can I use?",
     answer:
-      "You can return unused items in their original packaging within 30 days for a refund or exchange. Contact support for assistance.",
+      "Skooly supports lecture slides, PDFs, code files, and supplementary notes. Content is organized under Theory or Lab, with metadata like topic, week, and tags.",
   },
   {
-    question: "How do I track my order?",
+    question: "How does intelligent search work?",
     answer:
-      "Track your order using the link provided in your confirmation email, or log into your account to view tracking details.",
+      "We use semantic search and RAG over your course content. You can query in natural language and get relevant documents, excerpts, or code snippets—not just keyword matches.",
   },
   {
-    question: "Do you ship internationally?",
+    question: "What can the AI generate?",
     answer:
-      "Yes, we ship worldwide. Shipping fees and delivery times vary by location, and customs duties may apply for some countries.",
+      "For theory: reading notes, slides, or PDFs. For lab: code-centric materials in specified languages. All outputs are grounded in your uploaded materials and validated for correctness.",
   },
   {
-    question: "What payment methods do you accept?",
+    question: "How is generated content validated?",
     answer:
-      "We accept Visa, MasterCard, American Express, PayPal, Apple Pay, and Google Pay, ensuring secure payment options for all customers.",
+      "We use syntax checks and linting for code, reference grounding against uploaded materials, rubric-based evaluation, and optional AI-assisted self-evaluation with explainability.",
   },
   {
-    question: "What if I receive a damaged item?",
+    question: "What can I do through the chat interface?",
     answer:
-      "Please contact our support team within 48 hours of delivery with photos of the damaged item. We'll arrange a replacement or refund.",
+      "Search course materials, request summaries or explanations, generate theory or lab materials, and ask follow-up questions. Responses are grounded in your course data and maintain context.",
   },
   {
-    question: "How can I contact customer support?",
+    question: "What is Community & Bot Support?",
     answer:
-      "You can reach our support team via email at support@example.com or through the live chat on our website. We're available 24/7 to assist you.",
+      "A discussion space where students can post questions. When the intended receiver is unavailable, a bot can provide grounded, course-backed replies automatically.",
   },
 ];
 
+/**
+ * FAQ for the AI supplementary learning platform (materials, search, generation, chat, community).
+ */
 const FAQ = () => {
   return (
     <div
@@ -52,7 +56,7 @@ const FAQ = () => {
         Frequently Asked Questions
       </h2>
       <p className="mt-1.5 md:text-center xs:text-lg text-muted-foreground">
-        Quick answers to common questions about our products and services.
+        Quick answers about course materials, AI search, generation, and the chat companion.
       </p>
 
       <div className="min-h-[550px] md:min-h-[320px] xl:min-h-[300px]">

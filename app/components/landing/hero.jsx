@@ -4,19 +4,23 @@ import { ArrowUpRight, CirclePlay } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+/**
+ * Hero section: positions Skooly as the solution to fragmented course resources
+ * (slides, PDFs, lab code)—organize, search, generate, validate, chat.
+ */
 const Hero = () => {
   return (
     <div className="min-h-[calc(100vh-4rem)] w-full flex items-center justify-center overflow-hidden border-b border-accent">
       <div className="max-w-(--breakpoint-xl) w-full flex flex-col lg:flex-row mx-auto items-center justify-between gap-y-14 gap-x-10 px-6 py-12 lg:py-0">
         <div className="max-w-xl">
           <Badge className="rounded-full py-1 border-none bg-primary/10 text-primary">
-            Revolutionizing Student Learning
+            AI-Powered Supplementary Learning
           </Badge>
-          <h1 className="mt-6 max-w-[20ch] text-3xl xs:text-4xl sm:text-5xl lg:text-[2.75rem] xl:text-5xl font-bold leading-[1.2]! tracking-tight">
-            Master Your Curriculum with Skooly
+          <h1 className="mt-6 max-w-[24ch] text-3xl xs:text-4xl sm:text-5xl lg:text-[2.75rem] xl:text-5xl font-bold leading-[1.2]! tracking-tight">
+            Stop juggling slides, PDFs, and lab code. Learn smarter.
           </h1>
           <p className="mt-6 max-w-[60ch] xs:text-lg text-muted-foreground">
-            The all-in-one hub for your course materials. Upload your notes, preview them instantly, and use AI to unlock deeper insights from your lectures.
+            Skooly organizes your course content, powers semantic search and RAG, generates theory notes and lab materials, and gives you a conversational AI tutor—all grounded in your actual curriculum.
           </p>
           <div className="mt-12 flex flex-col sm:flex-row items-center gap-4">
             <Button
@@ -32,8 +36,11 @@ const Hero = () => {
               variant="outline"
               size="lg"
               className="w-full sm:w-auto rounded-full text-base shadow-none px-8 h-12"
+              asChild
             >
-              <CirclePlay className="h-5! w-5!" /> Watch Demo
+              <Link href="/companion">
+                <CirclePlay className="h-5! w-5!" /> Try AI Companion
+              </Link>
             </Button>
           </div>
         </div>
