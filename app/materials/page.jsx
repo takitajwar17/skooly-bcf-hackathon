@@ -220,36 +220,43 @@ function MaterialGrid({ items, getIcon, onDelete, isAdmin }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {items.map((item) => (
-        <Card key={item._id} className="flex flex-col shadow-sm">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-            <div className="flex gap-3">
-              <div className="mt-1 p-2 bg-muted rounded-lg h-fit">{getIcon(item.type)}</div>
-              <div className="space-y-1">
-                <CardTitle className="text-base line-clamp-1">{item.title}</CardTitle>
-                <CardDescription className="text-xs">Week {item.week} • {item.topic}</CardDescription>
+        <Card key={item._id} className="flex flex-col shadow-sm group hover:border-primary/50 transition-colors">
+          <Link href={`/materials/${item._id}`} className="flex-1 flex flex-col">
+            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+              <div className="flex gap-3">
+                <div className="mt-1 p-2 bg-muted rounded-lg h-fit group-hover:bg-primary/10 transition-colors">{getIcon(item.type)}</div>
+                <div className="space-y-1">
+                  <CardTitle className="text-base line-clamp-1 group-hover:text-primary transition-colors">{item.title}</CardTitle>
+                  <CardDescription className="text-xs">Week {item.week} • {item.topic}</CardDescription>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <p className="text-sm text-muted-foreground line-clamp-3 mb-3">{item.description}</p>
-            <div className="flex flex-wrap gap-1">
-              {item.tags.map(tag => (
-                <Badge key={tag} variant="secondary" className="text-[10px] font-normal px-1.5 py-0">{tag}</Badge>
-              ))}
-            </div>
-          </CardContent>
+            </CardHeader>
+            <CardContent className="flex-1">
+              <p className="text-sm text-muted-foreground line-clamp-3 mb-3">{item.description}</p>
+              <div className="flex flex-wrap gap-1">
+                {item.tags.map(tag => (
+                  <Badge key={tag} variant="secondary" className="text-[10px] font-normal px-1.5 py-0">{tag}</Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Link>
           <CardFooter className="pt-2 border-t bg-muted/5 gap-2">
             <Button variant="ghost" size="sm" className="flex-1 justify-start gap-2 h-8 text-xs" asChild>
+              <Link href={`/materials/${item._id}`}>
+                <FileText className="h-3.5 w-3.5" />
+                View
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" className="px-2 h-8 text-xs text-muted-foreground hover:text-primary" asChild>
               <a href={item.fileUrl} target="_blank" rel="noopener noreferrer">
                 <Download className="h-3.5 w-3.5" />
-                Download
               </a>
             </Button>
             {isAdmin && (
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 text-[10px] text-destructive hover:bg-destructive/10"
+                className="h-8 text-[10px] text-destructive hover:bg-destructive/10 px-2"
                 onClick={() => onDelete(item._id)}
               >
                 Delete

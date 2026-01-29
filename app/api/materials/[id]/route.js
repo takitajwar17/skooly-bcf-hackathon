@@ -6,6 +6,31 @@ import { isAdmin } from "@/lib/actions/user";
 import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 /**
+ * GET /api/materials/[id]
+ * Get a single material by ID
+ */
+export async function GET(request, { params }) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    await connect();
+
+    const material = await Material.findById(id);
+    if (!material) {
+      return NextResponse.json({ error: "Material not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ data: material });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+/**
  * DELETE /api/materials/[id]
  * Delete a material and its associated file from Cloudinary
  */

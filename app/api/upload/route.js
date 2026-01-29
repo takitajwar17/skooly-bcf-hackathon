@@ -56,12 +56,12 @@ export async function POST(request) {
     // Upload to Cloudinary
     console.log("4. Uploading to Cloudinary...");
     const fileExtension = path.extname(file.name);
-    const publicId = `course_materials/${course}/${uuidv4()}`;
+    const public_id = `${course}/${uuidv4()}`;
     
     const cloudinaryResult = await uploadToCloudinary(buffer, {
-      publicId,
+      public_id,
       folder: 'course_materials',
-      resourceType: 'auto',
+      resource_type: 'auto',
     });
     console.log("   Cloudinary result:", { secure_url: cloudinaryResult.secure_url, public_id: cloudinaryResult.public_id });
 
