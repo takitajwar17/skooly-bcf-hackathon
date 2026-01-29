@@ -1,60 +1,64 @@
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
 import {
-  BookCheck,
-  ChartPie,
-  FolderSync,
-  Goal,
+  FolderOpen,
+  Search,
+  Sparkles,
+  ShieldCheck,
+  MessageCircle,
   Users,
-  Zap,
 } from "lucide-react";
 
+/** Features aligned with PROBLEM_STATEMENT: CMS, Search, AI Materials, Validation, Chat, Community. */
 const features = [
   {
-    icon: Goal,
-    title: "Identify Opportunities",
+    icon: FolderOpen,
+    title: "Content Management (Theory & Lab)",
     description:
-      "Easily uncover untapped areas to explore and expand your reach effortlessly.",
+      "Admins upload and organize slides, PDFs, code, and notes. Browse by topic, week, tags, and type—all in one place.",
   },
   {
-    icon: BookCheck,
-    title: "Build Authority",
+    icon: Search,
+    title: "Intelligent Search (RAG-Based)",
     description:
-      "Create valuable content that resonates, inspires trust, and positions you as an expert.",
+      "Semantic search over course materials. Natural-language queries return relevant documents, excerpts, and code snippets.",
   },
   {
-    icon: ChartPie,
-    title: "Instant Insights",
+    icon: Sparkles,
+    title: "AI-Generated Learning Materials",
     description:
-      "Gain immediate, actionable insights with a quick glance, enabling fast decision-making.",
+      "Generate theory notes, slides, or lab code from a topic or prompt. Output is grounded in your uploaded curriculum.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Validation & Evaluation",
+    description:
+      "Generated content is checked for correctness, relevance, and academic reliability—syntax, grounding, and rubrics.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Conversational AI Companion",
+    description:
+      "Chat to search, summarize, generate materials, and ask follow-ups. Responses are grounded in course data.",
   },
   {
     icon: Users,
-    title: "Engage with Your Audience",
+    title: "Community & Bot Support",
     description:
-      "Boost audience engagement with interactive features like polls, quizzes, and forms.",
-  },
-  {
-    icon: FolderSync,
-    title: "Automate Your Workflow",
-    description:
-      "Streamline your processes by automating repetitive tasks, saving time and reducing effort.",
-  },
-  {
-    icon: Zap,
-    title: "Accelerate Growth",
-    description:
-      "Supercharge your growth by implementing strategies that drive results quickly and efficiently.",
+      "Discuss problems with peers. Bot support provides grounded replies when the intended receiver is unavailable.",
   },
 ];
 
+/**
+ * Features grid mapping to PROBLEM_STATEMENT Parts 1–5 + Community bonus.
+ */
 const Features = () => {
   return (
     <div
       id="features"
       className="max-w-(--breakpoint-xl) mx-auto w-full py-12 xs:py-20 px-6"
     >
-      <h2 className="text-3xl xs:text-4xl md:text-5xl md:leading-[3.5rem] font-semibold tracking-tight sm:max-w-xl sm:text-center sm:mx-auto">
-        Boost Your Strategy with Smart Features
+      <h2 className="text-3xl xs:text-4xl md:text-5xl md:leading-[3.5rem] font-semibold tracking-tight sm:max-w-2xl sm:text-center sm:mx-auto">
+        Everything You Need to Master Your Course
       </h2>
       <div className="mt-8 xs:mt-14 w-full mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-12">
         {features.map((feature) => (
@@ -63,7 +67,7 @@ const Features = () => {
             className="flex flex-col border rounded-xl overflow-hidden shadow-none"
           >
             <CardHeader>
-              <feature.icon />
+              <feature.icon className="h-6 w-6 text-primary" />
               <h4 className="mt-3! text-xl font-semibold tracking-tight">
                 {feature.title}
               </h4>

@@ -12,7 +12,10 @@ const footerSections = [
     title: "Product",
     links: [
       { title: "Course Materials", href: "/materials" },
-      { title: "AI Tutor", href: "#" },
+      { title: "Search", href: "/search" },
+      { title: "AI Materials", href: "/ai-materials" },
+      { title: "AI Companion", href: "/companion" },
+      { title: "Community", href: "/community" },
       { title: "Dashboard", href: "/dashboard" },
     ],
   },
@@ -21,7 +24,6 @@ const footerSections = [
     links: [
       { title: "Documentation", href: "#" },
       { title: "Help Center", href: "#" },
-      { title: "Community", href: "#" },
     ],
   },
   {
@@ -42,6 +44,9 @@ const Logo = () => (
   </Link>
 );
 
+/**
+ * Site footer: product links (materials, search, AI, community, companion), resources, legal.
+ */
 const Footer = () => {
   return (
     <footer className="mt-12 xs:mt-20 dark bg-background border-t">
@@ -49,7 +54,7 @@ const Footer = () => {
         <div className="col-span-full xl:col-span-2">
           <Logo />
           <p className="mt-4 text-muted-foreground max-w-xs">
-            Your intelligent student companion for managing curriculum and mastering course content with AI.
+            AI-powered supplementary learning: organized content, RAG search, generated materials, validation, and a conversational tutor—all grounded in your course.
           </p>
         </div>
 

@@ -11,71 +11,73 @@ import { StarIcon } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
+/** Testimonials from students, instructors, and TAs using the AI supplementary learning platform. */
 const testimonials = [
   {
     id: 1,
-    name: "John Doe",
-    designation: "Software Engineer",
-    company: "TechCorp",
+    name: "Alex Chen",
+    designation: "CS Undergrad",
+    company: "State University",
     testimonial:
-      "This product has completely transformed the way we work. The efficiency and ease of use are unmatched! " +
-      "We were struggling with productivity before, but this tool has streamlined our entire process. ",
+      "Slides, PDFs, and lab code were scattered everywhere. Skooly put everything in one place. " +
+      "Semantic search actually finds what I need, and the AI companion helps me revise without digging through folders.",
     avatar: "https://randomuser.me/api/portraits/men/1.jpg",
   },
   {
     id: 2,
-    name: "Jane Smith",
-    designation: "Product Manager",
-    company: "InnovateX",
+    name: "Dr. Sarah Miller",
+    designation: "Course Instructor",
+    company: "Engineering Dept.",
     testimonial:
-      "An amazing tool that simplifies complex tasks. Highly recommended for professionals in the industry. " +
-      "The intuitive interface makes it easy to onboard new team members, and the automation features save us countless hours every week. ",
+      "We use Skooly to organize theory and lab materials. Students can search, generate notes, and chat—all grounded in our curriculum. " +
+      "Validation keeps generated content correct and relevant. It’s become essential for our course.",
     avatar: "https://randomuser.me/api/portraits/women/2.jpg",
   },
   {
     id: 3,
-    name: "Michael Johnson",
-    designation: "UX Designer",
-    company: "DesignPro",
+    name: "Jordan Kim",
+    designation: "Teaching Assistant",
+    company: "CS Lab",
     testimonial:
-      "The user experience is top-notch! The interface is clean, intuitive, and easy to navigate. " +
-      "As a designer, I appreciate the attention to detail and well-thought-out UI components. " +
-      "It makes designing and prototyping so much more efficient.",
+      "The chat interface is a game-changer. Students ask follow-ups and get answers tied to our materials. " +
+      "Community + bot support means fewer repetitive questions and better use of office hours.",
     avatar: "https://randomuser.me/api/portraits/men/3.jpg",
   },
   {
     id: 4,
-    name: "Emily Davis",
-    designation: "Marketing Specialist",
-    company: "BrandBoost",
+    name: "Maya Patel",
+    designation: "Grad Student",
+    company: "State University",
     testimonial:
-      "I've seen a significant improvement in our team's productivity since we started using this service. " +
-      "The ability to track performance, analyze data, and collaborate across teams has been a game-changer.",
+      "I used to waste time hunting for the right slide or code snippet. Now I query in plain English and get exact excerpts. " +
+      "Generated lab materials are syntactically correct and actually match our course. Huge time-saver.",
     avatar: "https://randomuser.me/api/portraits/women/4.jpg",
   },
   {
     id: 5,
-    name: "Daniel Martinez",
-    designation: "Full-Stack Developer",
-    company: "CodeCrafters",
+    name: "Prof. David Okonkwo",
+    designation: "Dept. Chair",
+    company: "Computer Science",
     testimonial:
-      "The best investment we've made! The support team is also super responsive and helpful. " +
-      "As a developer, I appreciate the well-documented API, the flexibility of integrations, and the robust security features.",
+      "Skooly solves the fragmented-resources problem we’ve had for years. Content is organized, search is intelligent, " +
+      "and generated materials are validated. The architecture and AI components are well thought out.",
     avatar: "https://randomuser.me/api/portraits/men/5.jpg",
   },
   {
     id: 6,
-    name: "Sophia Lee",
-    designation: "Data Analyst",
-    company: "InsightTech",
+    name: "Riley Torres",
+    designation: "Undergrad",
+    company: "State University",
     testimonial:
-      "This tool has saved me hours of work! The analytics and reporting features are incredibly powerful. " +
-      "I can now generate detailed reports in minutes, which previously took days to compile. " +
-      "helping us make smarter, data-backed decisions.",
+      "The AI companion feels like having a tutor that actually knows our course. Summaries, explanations, and generated notes " +
+      "are all grounded in our uploaded stuff. Revision has never been this straightforward.",
     avatar: "https://randomuser.me/api/portraits/women/6.jpg",
   },
 ];
 
+/**
+ * Testimonials from students, instructors, and TAs using Skooly.
+ */
 const Testimonial = () => {
   const [api, setApi] = useState(null);
   const [current, setCurrent] = useState(0);

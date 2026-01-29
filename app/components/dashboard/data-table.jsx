@@ -157,7 +157,7 @@ const columns = [
   },
   {
     accessorKey: "header",
-    header: "Header",
+    header: "Title",
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />;
     },
@@ -165,7 +165,7 @@ const columns = [
   },
   {
     accessorKey: "type",
-    header: "Section Type",
+    header: "Type",
     cell: ({ row }) => (
       <div className="w-32">
         <Badge variant="outline" className="text-muted-foreground px-1.5">
@@ -177,20 +177,23 @@ const columns = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Done" ? (
-          <IconCircleCheckFilled className="text-primary" />
-        ) : (
-          <IconLoader />
-        )}
-        {row.original.status}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const done = ["Done", "Viewed", "Generated", "Uploaded"].includes(row.original.status);
+      return (
+        <Badge variant="outline" className="text-muted-foreground px-1.5">
+          {done ? (
+            <IconCircleCheckFilled className="text-primary" />
+          ) : (
+            <IconLoader />
+          )}
+          {row.original.status}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: "target",
-    header: () => <div className="w-full text-right">Target</div>,
+    header: () => <div className="w-full text-right">Week</div>,
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -202,7 +205,7 @@ const columns = [
           })
         }}>
         <Label htmlFor={`${row.original.id}-target`} className="sr-only">
-          Target
+          Week
         </Label>
         <Input
           className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
@@ -213,7 +216,7 @@ const columns = [
   },
   {
     accessorKey: "limit",
-    header: () => <div className="w-full text-right">Limit</div>,
+    header: () => <div className="w-full text-right">Pages</div>,
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -225,7 +228,7 @@ const columns = [
           })
         }}>
         <Label htmlFor={`${row.original.id}-limit`} className="sr-only">
-          Limit
+          Pages
         </Label>
         <Input
           className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
@@ -236,31 +239,32 @@ const columns = [
   },
   {
     accessorKey: "reviewer",
-    header: "Reviewer",
+    header: "Uploaded by",
     cell: ({ row }) => {
-      const isAssigned = row.original.reviewer !== "Assign reviewer"
+      const isAssigned = row.original.reviewer !== "Assign reviewer" && row.original.reviewer !== "—";
 
       if (isAssigned) {
-        return row.original.reviewer
+        return row.original.reviewer;
+      }
+      if (row.original.reviewer === "—") {
+        return <span className="text-muted-foreground">—</span>;
       }
 
       return (
         <>
           <Label htmlFor={`${row.original.id}-reviewer`} className="sr-only">
-            Reviewer
+            Uploaded by
           </Label>
           <Select>
             <SelectTrigger
               className="w-38 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
               size="sm"
               id={`${row.original.id}-reviewer`}>
-              <SelectValue placeholder="Assign reviewer" />
+              <SelectValue placeholder="Assign" />
             </SelectTrigger>
             <SelectContent align="end">
-              <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-              <SelectItem value="Jamik Tashpulatov">
-                Jamik Tashpulatov
-              </SelectItem>
+              <SelectItem value="Dr. Miller">Dr. Miller</SelectItem>
+              <SelectItem value="TA Kim">TA Kim</SelectItem>
             </SelectContent>
           </Select>
         </>
@@ -377,32 +381,28 @@ export function DataTable({
   }
 
   return (
-    <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
+    <Tabs defaultValue="materials" className="w-full flex-col justify-start gap-6">
       <div className="flex items-center justify-between px-4 lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
-        <Select defaultValue="outline">
+        <Select defaultValue="materials">
           <SelectTrigger className="flex w-fit @4xl/main:hidden" size="sm" id="view-selector">
             <SelectValue placeholder="Select a view" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="outline">Outline</SelectItem>
-            <SelectItem value="past-performance">Past Performance</SelectItem>
-            <SelectItem value="key-personnel">Key Personnel</SelectItem>
-            <SelectItem value="focus-documents">Focus Documents</SelectItem>
+            <SelectItem value="materials">Materials</SelectItem>
+            <SelectItem value="activity">Activity</SelectItem>
+            <SelectItem value="generations">AI Generations</SelectItem>
+            <SelectItem value="community">Community</SelectItem>
           </SelectContent>
         </Select>
         <TabsList
           className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
-          <TabsTrigger value="past-performance">
-            Past Performance <Badge variant="secondary">3</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel">
-            Key Personnel <Badge variant="secondary">2</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
+          <TabsTrigger value="materials">Materials</TabsTrigger>
+          <TabsTrigger value="activity">Activity <Badge variant="secondary">3</Badge></TabsTrigger>
+          <TabsTrigger value="generations">AI Generations <Badge variant="secondary">2</Badge></TabsTrigger>
+          <TabsTrigger value="community">Community</TabsTrigger>
         </TabsList>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -437,12 +437,12 @@ export function DataTable({
           </DropdownMenu>
           <Button variant="outline" size="sm">
             <IconPlus />
-            <span className="hidden lg:inline">Add Section</span>
+            <span className="hidden lg:inline">Add material</span>
           </Button>
         </div>
       </div>
       <TabsContent
-        value="outline"
+        value="materials"
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
         <div className="overflow-hidden rounded-lg border">
           <DndContext
@@ -556,14 +556,14 @@ export function DataTable({
           </div>
         </div>
       </TabsContent>
-      <TabsContent value="past-performance" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+      <TabsContent value="activity" className="flex flex-col px-4 lg:px-6">
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground text-sm">Activity feed (dummy)</div>
       </TabsContent>
-      <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+      <TabsContent value="generations" className="flex flex-col px-4 lg:px-6">
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground text-sm">AI generations (dummy)</div>
       </TabsContent>
-      <TabsContent value="focus-documents" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
+      <TabsContent value="community" className="flex flex-col px-4 lg:px-6">
+        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground text-sm">Community (dummy)</div>
       </TabsContent>
     </Tabs>
   );
@@ -606,7 +606,7 @@ function TableCellViewer({
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.header}</DrawerTitle>
           <DrawerDescription>
-            Showing total visitors for the last 6 months
+            Course material (dummy). Theory / Lab, week, status, uploaded by.
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
@@ -648,13 +648,10 @@ function TableCellViewer({
               <Separator />
               <div className="grid gap-2">
                 <div className="flex gap-2 leading-none font-medium">
-                  Trending up by 5.2% this month{" "}
-                  <IconTrendingUp className="size-4" />
+                  App activity (dummy) <IconTrendingUp className="size-4" />
                 </div>
                 <div className="text-muted-foreground">
-                  Showing total visitors for the last 6 months. This is just
-                  some random text to test the layout. It spans multiple lines
-                  and should wrap around.
+                  Search vs AI generations over recent months. Placeholder for material-level stats.
                 </div>
               </div>
               <Separator />
@@ -662,7 +659,7 @@ function TableCellViewer({
           )}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
+              <Label htmlFor="header">Title</Label>
               <Input id="header" defaultValue={item.header} />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -670,25 +667,13 @@ function TableCellViewer({
                 <Label htmlFor="type">Type</Label>
                 <Select defaultValue={item.type}>
                   <SelectTrigger id="type" className="w-full">
-                    <SelectValue placeholder="Select a type" />
+                    <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Table of Contents">
-                      Table of Contents
-                    </SelectItem>
-                    <SelectItem value="Executive Summary">
-                      Executive Summary
-                    </SelectItem>
-                    <SelectItem value="Technical Approach">
-                      Technical Approach
-                    </SelectItem>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="Capabilities">Capabilities</SelectItem>
-                    <SelectItem value="Focus Documents">
-                      Focus Documents
-                    </SelectItem>
-                    <SelectItem value="Narrative">Narrative</SelectItem>
-                    <SelectItem value="Cover Page">Cover Page</SelectItem>
+                    <SelectItem value="Theory">Theory</SelectItem>
+                    <SelectItem value="Lab">Lab</SelectItem>
+                    <SelectItem value="PDF">PDF</SelectItem>
+                    <SelectItem value="Code">Code</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -696,38 +681,37 @@ function TableCellViewer({
                 <Label htmlFor="status">Status</Label>
                 <Select defaultValue={item.status}>
                   <SelectTrigger id="status" className="w-full">
-                    <SelectValue placeholder="Select a status" />
+                    <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Done">Done</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
+                    <SelectItem value="Viewed">Viewed</SelectItem>
+                    <SelectItem value="Generated">Generated</SelectItem>
+                    <SelectItem value="Uploaded">Uploaded</SelectItem>
+                    <SelectItem value="In Process">In Process</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="target">Target</Label>
+                <Label htmlFor="target">Week</Label>
                 <Input id="target" defaultValue={item.target} />
               </div>
               <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Limit</Label>
+                <Label htmlFor="limit">Pages</Label>
                 <Input id="limit" defaultValue={item.limit} />
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Reviewer</Label>
+              <Label htmlFor="reviewer">Uploaded by</Label>
               <Select defaultValue={item.reviewer}>
                 <SelectTrigger id="reviewer" className="w-full">
-                  <SelectValue placeholder="Select a reviewer" />
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-                  <SelectItem value="Jamik Tashpulatov">
-                    Jamik Tashpulatov
-                  </SelectItem>
-                  <SelectItem value="Emily Whalen">Emily Whalen</SelectItem>
+                  <SelectItem value="Dr. Miller">Dr. Miller</SelectItem>
+                  <SelectItem value="TA Kim">TA Kim</SelectItem>
+                  <SelectItem value="—">—</SelectItem>
                 </SelectContent>
               </Select>
             </div>
