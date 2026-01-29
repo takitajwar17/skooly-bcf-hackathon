@@ -140,7 +140,7 @@ export default function MaterialViewerPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => router.push("/ai-materials")}
+                    onClick={() => router.push("/my-materials")}
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
@@ -240,6 +240,9 @@ function ContentRenderer({ type, content }) {
   if (type === "slides" || type === "slide") {
     return <SlideRenderer content={content} />;
   }
+  if (type === "mcq") {
+    return <MCQRenderer content={content} />;
+  }
 
   return (
     <div className="prose dark:prose-invert max-w-none">
@@ -266,6 +269,146 @@ function ContentRenderer({ type, content }) {
       >
         {content}
       </ReactMarkdown>
+    </div>
+  );
+}
+
+function MCQRenderer({ content }) {
+  const [questions, setQuestions] = useState([]);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  // Track which questions have been revealed
+  const [revealedQuestions, setRevealedQuestions] = useState({});
+
+  useEffect(() => {
+    try {
+      const cleanContent = content.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(cleanContent);
+      setQuestions(Array.isArray(parsed) ? parsed : []);
+    } catch (e) {
+      console.error("Failed to parse MCQs:", e);
+    }
+  }, [content]);
+
+  const handleOptionSelect = (qIndex, option) => {
+    // If already revealed, do nothing
+    if (revealedQuestions[qIndex]) return;
+
+    setSelectedAnswers((prev) => ({
+      ...prev,
+      [qIndex]: option,
+    }));
+
+    // Reveal the answer for this question immediately
+    setRevealedQuestions((prev) => ({
+      ...prev,
+      [qIndex]: true,
+    }));
+  };
+
+  if (!questions.length) return <div>Invalid quiz format</div>;
+
+  // Calculate current score based on revealed questions
+  const currentScore = Object.keys(revealedQuestions).reduce((acc, qIndex) => {
+    const idx = parseInt(qIndex);
+    if (selectedAnswers[idx] === questions[idx].correctAnswer) {
+      return acc + 1;
+    }
+    return acc;
+  }, 0);
+
+  const answeredCount = Object.keys(revealedQuestions).length;
+
+  return (
+    <div className="max-w-full mx-auto space-y-8 pb-12">
+      <div className="flex items-start justify-between sticky -top-10 bg-background backdrop-blur z-10 py-4 border-b">
+        <h2 className="text-2xl font-bold">Quiz</h2>
+        <div className="text-lg font-bold px-4 py-2 bg-primary/10 rounded-lg">
+          Score: {currentScore} / {answeredCount}
+        </div>
+      </div>
+
+      {questions.map((q, idx) => {
+        const isRevealed = revealedQuestions[idx];
+        const selected = selectedAnswers[idx];
+
+        return (
+          <div key={idx} className="p-6 border rounded-xl bg-card shadow-sm">
+            <h3 className="font-semibold text-lg mb-4">
+              {idx + 1}. {q.question}
+            </h3>
+            <div className="grid gap-3">
+              {q.options.map((option, optIdx) => {
+                let optionClass =
+                  "p-4 rounded-lg border cursor-pointer transition-all hover:bg-accent";
+
+                if (isRevealed) {
+                  if (option === q.correctAnswer) {
+                    optionClass =
+                      "p-4 rounded-lg border bg-green-500/20 border-green-500 font-medium";
+                  } else if (selected === option) {
+                    optionClass =
+                      "p-4 rounded-lg border bg-red-500/20 border-red-500";
+                  } else {
+                    optionClass = "p-4 rounded-lg border opacity-60";
+                  }
+                } else if (selected === option) {
+                  optionClass =
+                    "p-4 rounded-lg border border-primary bg-primary/10 ring-1 ring-primary";
+                }
+
+                return (
+                  <div
+                    key={optIdx}
+                    onClick={() => handleOptionSelect(idx, option)}
+                    className={optionClass}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
+                          selected === option ||
+                          (isRevealed && option === q.correctAnswer)
+                            ? "border-primary"
+                            : "border-muted-foreground"
+                        }`}
+                      >
+                        {(selected === option ||
+                          (isRevealed && option === q.correctAnswer)) && (
+                          <div
+                            className={`h-2 w-2 rounded-full ${
+                              isRevealed && option === q.correctAnswer
+                                ? "bg-green-600"
+                                : "bg-primary"
+                            }`}
+                          />
+                        )}
+                      </div>
+                      <span>{option}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {isRevealed && (
+              <div
+                className={`mt-4 p-4 rounded-lg text-sm animate-in fade-in slide-in-from-top-2 duration-300 ${
+                  selected === q.correctAnswer
+                    ? "bg-green-500/10 text-green-800 dark:text-green-300"
+                    : "bg-red-500/10 text-red-800 dark:text-red-300"
+                }`}
+              >
+                <div className="font-bold mb-1">
+                  {selected === q.correctAnswer
+                    ? "✅ Correct!"
+                    : "❌ Incorrect"}
+                </div>
+                <span className="font-semibold">Explanation: </span>
+                {q.explanation}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

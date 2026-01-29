@@ -122,6 +122,23 @@ export async function POST(req) {
         Use Markdown with code blocks.
         ${customization ? `Focus on: ${customization}` : ""}`;
         break;
+      case "mcq":
+        prompt = `You are an expert exam creator. Create a quiz with 10 Multiple Choice Questions (MCQs).
+        Topic: ${title}.
+        
+        Context/Content provided:
+        ${finalSourceContent}
+        
+        Return the result strictly as a valid JSON array of objects. Do not include markdown formatting or backticks.
+        Each object must have the following structure:
+        {
+          "question": "Question text",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "correctAnswer": "The correct option text (must match one of the options exactly)",
+          "explanation": "Brief explanation of why this is correct"
+        }
+        ${customization ? `Focus on: ${customization}` : ""}`;
+        break;
       default:
         prompt = `Analyze the following content: ${finalSourceContent}`;
     }
@@ -137,6 +154,12 @@ export async function POST(req) {
     ]);
 
     const generatedContent = result.response.text();
+
+    // Map AI types to Material types
+    let materialType = "text";
+    if (type === "slides") materialType = "slide";
+    if (type === "code-guide") materialType = "code";
+    if (type === "mcq") materialType = "text"; // Map MCQ to text for now or add a new type in Material model if needed
 
     // Format category to match enum ["Theory", "Lab"]
     const formattedCategory =

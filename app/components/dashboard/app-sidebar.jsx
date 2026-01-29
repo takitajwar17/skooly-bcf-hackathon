@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   IconDashboard,
   IconFileDescription,
@@ -10,11 +10,13 @@ import {
   IconSettings,
   IconSparkles,
   IconUsersGroup,
-} from "@tabler/icons-react"
+  IconPencil,
+  IconNotebook,
+} from "@tabler/icons-react";
 
-import { NavMain } from "@/app/components/dashboard/nav-main"
-import { NavSecondary } from "@/app/components/dashboard/nav-secondary"
-import { NavUser } from "@/app/components/dashboard/nav-user"
+import { NavMain } from "@/app/components/dashboard/nav-main";
+import { NavSecondary } from "@/app/components/dashboard/nav-secondary";
+import { NavUser } from "@/app/components/dashboard/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +27,7 @@ import {
   SidebarMenuItem,
   SidebarGroup,
   SidebarGroupContent,
-} from "@/app/components/ui/sidebar"
+} from "@/app/components/ui/sidebar";
 
 const data = {
   navMain: [
@@ -39,6 +41,12 @@ const data = {
       url: "/materials",
       icon: IconFileDescription,
     },
+
+    {
+      title: "My Materials",
+      url: "/my-materials",
+      icon: IconNotebook,
+    },
     {
       title: "Skooly AI",
       url: "/companion",
@@ -48,6 +56,11 @@ const data = {
       title: "Community",
       url: "/community",
       icon: IconUsersGroup,
+    },
+    {
+      title: "Handwritten Notes",
+      url: "/handwritten-notes",
+      icon: IconPencil,
     },
   ],
   navSecondary: [
@@ -67,20 +80,23 @@ const data = {
       icon: IconSearch,
     },
   ],
-}
+};
 
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar({ ...props }) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
               <a href="/">
                 <IconSchool className="!size-5 text-primary" />
-                <span className="text-base font-bold tracking-tight">Skooly</span>
+                <span className="text-base font-bold tracking-tight">
+                  Skooly
+                </span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
