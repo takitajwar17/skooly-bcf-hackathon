@@ -30,6 +30,7 @@ import {
   FileType,
   ArrowLeft,
   CheckCircle2,
+  Mic,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/app/components/dashboard/site-header";
@@ -404,6 +405,20 @@ export default function NewMaterialPage() {
                       >
                         <CheckCircle2 className="mb-3 h-6 w-6" />
                         MCQ Quiz
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem
+                        value="podcast"
+                        id="podcast"
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor="podcast"
+                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                      >
+                        <Mic className="mb-3 h-6 w-6" />
+                        AI Podcast
                       </Label>
                     </div>
                   </RadioGroup>

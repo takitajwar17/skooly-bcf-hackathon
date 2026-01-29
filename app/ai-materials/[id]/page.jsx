@@ -15,6 +15,9 @@ import {
   Printer,
   ChevronLeft,
   ChevronRight,
+  Play,
+  Pause,
+  RotateCcw,
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Skeleton } from "@/app/components/ui/skeleton";
@@ -163,6 +166,7 @@ export default function MaterialViewerPage() {
                 <ContentRenderer
                   type={material.type}
                   content={material.content}
+                  audioUrl={material.audioUrl}
                 />
               </div>
             </div>
@@ -236,12 +240,131 @@ export default function MaterialViewerPage() {
   );
 }
 
-function ContentRenderer({ type, content }) {
+function AudioPlayer({ audioUrl, script }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const updateProgress = () => {
+      setProgress((audio.currentTime / audio.duration) * 100);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setProgress(100);
+    };
+
+    audio.addEventListener("timeupdate", updateProgress);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.removeEventListener("timeupdate", updateProgress);
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, []);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleRestart = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-8">
+      <div className="bg-card border rounded-xl p-6 shadow-sm">
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <span className="relative flex h-3 w-3">
+            <span
+              className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 ${isPlaying ? "" : "hidden"}`}
+            ></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+          </span>
+          AI Podcast Player
+        </h2>
+
+        <audio ref={audioRef} src={audioUrl} className="hidden" />
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-center gap-6">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-full"
+              onClick={handleRestart}
+            >
+              <RotateCcw className="h-5 w-5" />
+            </Button>
+            <Button
+              size="icon"
+              className="h-16 w-16 rounded-full shadow-lg shadow-primary/20"
+              onClick={togglePlay}
+            >
+              {isPlaying ? (
+                <Pause className="h-8 w-8 fill-current" />
+              ) : (
+                <Play className="h-8 w-8 fill-current ml-1" />
+              )}
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-100 ease-linear"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
+              <span>{formatTime(audioRef.current?.duration || 0)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="font-semibold text-lg">Transcript</h3>
+        <div className="prose dark:prose-invert max-w-none p-6 border rounded-xl bg-muted/5">
+          <ReactMarkdown>{script}</ReactMarkdown>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatTime(seconds) {
+  if (isNaN(seconds)) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+function ContentRenderer({ type, content, audioUrl }) {
   if (type === "slides" || type === "slide") {
     return <SlideRenderer content={content} />;
   }
   if (type === "mcq") {
     return <MCQRenderer content={content} />;
+  }
+  if (type === "podcast" && audioUrl) {
+    return <AudioPlayer audioUrl={audioUrl} script={content} />;
   }
 
   return (

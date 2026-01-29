@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { connect } from "@/lib/mongodb/mongoose";
 import AiMaterial from "@/lib/models/AiMaterial";
 import { model } from "@/lib/ai/gemini";
+import { GoogleGenAI } from "@google/genai";
 
 export async function POST(req) {
   try {
@@ -139,6 +140,25 @@ export async function POST(req) {
         }
         ${customization ? `Focus on: ${customization}` : ""}`;
         break;
+      case "podcast":
+        prompt = `You are an expert podcast producer. Create a script for a 2-person podcast episode.
+        Topic: ${title}.
+        
+        Context/Content provided:
+        ${finalSourceContent}
+        
+        Requirements:
+        1. Two speakers: "Joe" (Host) and "Jane" (Expert).
+        2. Format: A natural, engaging conversation.
+        3. Length: Approximately 100-150 words total (target < 45 seconds spoken).
+        4. Style: Educational but conversational and lively.
+        5. Output Format: Strictly the script lines. 
+           Example:
+           Joe: Welcome back everyone. Today we're discussing [Topic].
+           Jane: Thanks Joe, it's a fascinating subject...
+        
+        ${customization ? `Focus on: ${customization}` : ""}`;
+        break;
       default:
         prompt = `Analyze the following content: ${finalSourceContent}`;
     }
@@ -155,11 +175,73 @@ export async function POST(req) {
 
     const generatedContent = result.response.text();
 
+    let audioUrl = null;
+
+    if (type === "podcast") {
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
+        const ttsResponse = await ai.models.generateContent({
+          model: "gemini-2.5-flash-preview-tts",
+          contents: [
+            {
+              parts: [
+                {
+                  text: `TTS the following conversation:\n${generatedContent}`,
+                },
+              ],
+            },
+          ],
+          config: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              multiSpeakerVoiceConfig: {
+                speakerVoiceConfigs: [
+                  {
+                    speaker: "Joe",
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { voiceName: "Kore" },
+                    },
+                  },
+                  {
+                    speaker: "Jane",
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { voiceName: "Puck" },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        });
+
+        const data =
+          ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (data) {
+          // Add WAV Header to raw PCM data
+          const pcmBuffer = Buffer.from(data, "base64");
+          const wavHeader = createWavHeader(
+            pcmBuffer.length,
+            24000, // sample rate
+            1, // channels
+            16, // bit depth
+          );
+          const wavBuffer = Buffer.concat([wavHeader, pcmBuffer]);
+          const wavBase64 = wavBuffer.toString("base64");
+
+          audioUrl = `data:audio/wav;base64,${wavBase64}`;
+        }
+      } catch (ttsError) {
+        console.error("TTS Generation Error:", ttsError);
+        // We continue without audio, just the script
+      }
+    }
+
     // Map AI types to Material types
     let materialType = "text";
     if (type === "slides") materialType = "slide";
     if (type === "code-guide") materialType = "code";
     if (type === "mcq") materialType = "text"; // Map MCQ to text for now or add a new type in Material model if needed
+    if (type === "podcast") materialType = "audio";
 
     // Format category to match enum ["Theory", "Lab"]
     const formattedCategory =
@@ -176,6 +258,7 @@ export async function POST(req) {
       topic: topic || title,
       sourceMaterialId: sourceMaterialId || new mongoose.Types.ObjectId(), // Fallback if missing
       customization,
+      audioUrl,
     });
 
     return NextResponse.json(newMaterial);
@@ -205,4 +288,39 @@ export async function POST(req) {
       { status: 500 },
     );
   }
+}
+
+function createWavHeader(dataLength, sampleRate, channels, bitsPerSample) {
+  const byteRate = (sampleRate * channels * bitsPerSample) / 8;
+  const blockAlign = (channels * bitsPerSample) / 8;
+  const buffer = Buffer.alloc(44);
+
+  // RIFF identifier
+  buffer.write("RIFF", 0);
+  // File length (36 + dataLength)
+  buffer.writeUInt32LE(36 + dataLength, 4);
+  // RIFF type
+  buffer.write("WAVE", 8);
+  // Format chunk identifier
+  buffer.write("fmt ", 12);
+  // Format chunk length
+  buffer.writeUInt32LE(16, 16);
+  // Sample format (1 is PCM)
+  buffer.writeUInt16LE(1, 20);
+  // Channels
+  buffer.writeUInt16LE(channels, 22);
+  // Sample rate
+  buffer.writeUInt32LE(sampleRate, 24);
+  // Byte rate
+  buffer.writeUInt32LE(byteRate, 28);
+  // Block align
+  buffer.writeUInt16LE(blockAlign, 32);
+  // Bits per sample
+  buffer.writeUInt16LE(bitsPerSample, 34);
+  // Data chunk identifier
+  buffer.write("data", 36);
+  // Data chunk length
+  buffer.writeUInt32LE(dataLength, 40);
+
+  return buffer;
 }
