@@ -61,17 +61,23 @@ export default function UploadPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("=== UPLOAD FORM SUBMITTED ===");
     const finalCourse = isNewCourse ? newCourseName : selectedCourse;
 
+    console.log("Form values:", { title, finalCourse, description, category, type, topic, week, tags, file: file?.name });
+
     if (!file) {
+      console.log("ERROR: No file selected");
       toast.error("Please select a file");
       return;
     }
     if (!finalCourse) {
+      console.log("ERROR: No course selected");
       toast.error("Please select or enter a course");
       return;
     }
 
+    console.log("Validation passed, starting upload...");
     setIsUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -84,23 +90,32 @@ export default function UploadPage() {
     formData.append("week", week);
     formData.append("tags", tags);
 
+    console.log("FormData prepared, sending to /api/upload...");
+
     try {
       const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
 
+      console.log("Response received:", res.status, res.statusText);
+
+      const result = await res.json();
+      console.log("Response body:", result);
+
       if (!res.ok) {
-        throw new Error("Upload failed");
+        throw new Error(result?.error || "Upload failed");
       }
 
+      console.log("Upload successful!");
       toast.success("Material uploaded successfully!");
       router.push("/materials");
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to upload material");
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload material");
     } finally {
       setIsUploading(false);
+      console.log("=== UPLOAD PROCESS COMPLETE ===");
     }
   };
 
