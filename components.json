@@ -10,11 +10,15 @@
     "cssVariables": true,
     "prefix": ""
   },
+  "iconLibrary": "radix",
   "aliases": {
     "components": "@/app/components",
     "utils": "@/lib/utils",
     "ui": "@/app/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
+  },
+  "registries": {
+    "@ai-blocks": "https://webllm.org/r/{name}.json"
   }
 }

@@ -26,13 +26,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "My App",
-  description: "Your app description goes here",
+  title: "Skooly - AI-Powered Student Hub",
+  description: "Organize your course materials, chat with your lecture notes, and master your curriculum with Skooly.",
   openGraph: {
     type: "website",
-    url: "https://your-app.vercel.app",
-    title: "My App",
-    description: "Your app description goes here",
+    url: "https://skooly-app.vercel.app",
+    title: "Skooly - AI-Powered Student Hub",
+    description: "Your personalized AI tutor and course material organizer.",
     image: "/inherit.png",
   },
 };
